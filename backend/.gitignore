@@ -4,7 +4,6 @@ __pycache__/
 alembic/
 venv/
 *.pyc
-google-credentials.json
 travel_app.db
 alembic.ini
 .env
