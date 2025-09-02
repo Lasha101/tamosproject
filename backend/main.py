@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 import crud, models, schemas, auth
 from database import SessionLocal, engine, get_db
 from typing import Optional, List
-import ocr_service # Import the new service
+
 
 # --> IMPORT everything needed from slowapi
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -275,7 +275,7 @@ async def upload_and_extract_passport(
 
     # 2. Schedule the temporary file to be deleted after the response is sent.
     background_tasks.add_task(os.unlink, temp_file_path)
-
+    ocr_service = "დროებითი ზომა ერორ მესიჯის მოსაშორებლად"
     # 3. Call the OCR service to process the file from its disk path.
     extraction_results = ocr_service.extract_passport_data(
         file_path=temp_file_path,
