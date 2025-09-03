@@ -71,8 +71,6 @@ class Patient(Base):
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
     birth_date = Column(Date)
-    delivery_date = Column(Date)
-    expiration_date = Column(Date)
     nationality = Column(String, index=True)
     personal_number = Column(String, index=True, nullable=False)
     address = Column(String, index=True)
