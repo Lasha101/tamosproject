@@ -44,7 +44,7 @@ class User(Base):
     user_name = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(String, index=True, nullable=False) # e.g., "doctor", "staff"
-    
+    is_approved = Column(Boolean, default=False)
     # Many-to-Many relationship to Patient
     patients = relationship("Patient", secondary=user_patient_association, back_populates="users")
     # Many-to-Many relationship to Specialisation
