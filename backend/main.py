@@ -100,11 +100,16 @@ def update_patient(patient_id: int, patient_update: schemas.PatientUpdate, db: S
     if not db_patient: raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
     return db_patient
 
-@app.delete("/patients/{patient_id}", response_model=schemas.Patient, dependencies=[Depends(auth.require_admin)])
+# FIX: Changed response_model to status_code=204
+@app.delete("/patients/{patient_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(auth.require_admin)])
 def delete_patient(patient_id: int, db: Session = Depends(get_db)):
+    # The crud function returns the deleted object or None if not found
     db_patient = crud.delete_patient(db, patient_id)
-    if not db_patient: raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
-    return db_patient
+    # We check if it was found before deletion
+    if not db_patient:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
+    # A 204 response has no body, so we return None
+    return None
 
 @app.put("/patients/{patient_id}/anex", response_model=schemas.Patient, dependencies=[Depends(auth.require_admin)])
 def sync_patient_anex_records(patient_id: int, records: List[schemas.AnexRecordUpdate], db: Session = Depends(get_db)):
