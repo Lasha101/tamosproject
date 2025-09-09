@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 import models, schemas, auth
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, List
 
 # --- User Functions ---
 def get_user(db: Session, user_id: int): return db.query(models.User).filter(models.User.id == user_id).first()
@@ -12,16 +12,13 @@ def get_users(db: Session, skip: int = 0, limit: int = 100): return db.query(mod
 
 def create_user(db: Session, user: schemas.UserCreate, token: Optional[str] = None):
     is_approved_status = False if token else True
-    # If called via registration, role will be a default, to be set on approval.
-    # If called by admin, role is taken from the UserCreate schema.
-    role_to_set = user.role if hasattr(user, 'role') else 'staff'
+    role_to_set = user.role if hasattr(user, 'role') and user.role else 'staff'
     
     if token:
         invitation = get_invitation_by_token(db, token)
         if not invitation or invitation.is_used or invitation.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc): return None
         invitation.is_used = True
-        # For registrations, role is not set until approval.
-        role_to_set = 'staff' # Default pending role
+        role_to_set = 'staff'
     
     db_user = models.User(
         **user.model_dump(exclude={"password", "role"}),
@@ -69,24 +66,18 @@ def get_patient(db: Session, patient_id: int): return db.query(models.Patient).f
 def get_patient_by_personal_number(db: Session, personal_number: str): return db.query(models.Patient).filter(models.Patient.personal_number == personal_number).first()
 def get_patients(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Patient).options(
-        joinedload(models.Patient.users),
-        joinedload(models.Patient.services),
-        joinedload(models.Patient.finances)
+        joinedload(models.Patient.staff_assigned),
+        joinedload(models.Patient.anex_records).joinedload(models.AnexRecord.doctor),
+        joinedload(models.Patient.anex_records).joinedload(models.AnexRecord.service),
+        joinedload(models.Patient.anex_records).joinedload(models.AnexRecord.finance),
     ).order_by(models.Patient.id).offset(skip).limit(limit).all()
 
 def create_patient(db: Session, patient: schemas.PatientCreate, user_id: int):
-    db_patient = models.Patient(**patient.model_dump(exclude={'service_ids', 'finance_ids'}))
+    db_patient = models.Patient(**patient.model_dump())
     
     admin_user = get_user(db, user_id)
-    if admin_user: db_patient.users.append(admin_user)
-
-    if patient.service_ids:
-        services = db.query(models.Service).filter(models.Service.id.in_(patient.service_ids)).all()
-        db_patient.services.extend(services)
-    
-    if patient.finance_ids:
-        finances = db.query(models.Finance).filter(models.Finance.id.in_(patient.finance_ids)).all()
-        db_patient.finances.extend(finances)
+    if admin_user:
+        db_patient.staff_assigned.append(admin_user)
 
     db.add(db_patient); db.commit(); db.refresh(db_patient)
     return db_patient
@@ -95,17 +86,9 @@ def update_patient(db: Session, patient_id: int, patient_update: schemas.Patient
     db_patient = get_patient(db, patient_id)
     if not db_patient: return None
 
-    for key, value in patient_update.model_dump(exclude={'service_ids', 'finance_ids'}, exclude_unset=True).items():
+    for key, value in patient_update.model_dump(exclude_unset=True).items():
         setattr(db_patient, key, value)
     
-    if patient_update.service_ids is not None:
-        services = db.query(models.Service).filter(models.Service.id.in_(patient_update.service_ids)).all()
-        db_patient.services = services
-        
-    if patient_update.finance_ids is not None:
-        finances = db.query(models.Finance).filter(models.Finance.id.in_(patient_update.finance_ids)).all()
-        db_patient.finances = finances
-
     db.commit(); db.refresh(db_patient)
     return db_patient
 
@@ -113,6 +96,44 @@ def delete_patient(db: Session, patient_id: int):
     db_patient = get_patient(db, patient_id)
     if db_patient: db.delete(db_patient); db.commit()
     return db_patient
+
+def sync_anex_records(db: Session, patient_id: int, records: List[schemas.AnexRecordUpdate]):
+    db_patient = db.query(models.Patient).options(joinedload(models.Patient.anex_records)).filter(models.Patient.id == patient_id).first()
+    if not db_patient:
+        return None
+
+    existing_record_ids = {r.id for r in db_patient.anex_records}
+    incoming_record_ids = {r.id for r in records if r.id is not None}
+
+    # Delete records that are no longer present
+    ids_to_delete = existing_record_ids - incoming_record_ids
+    if ids_to_delete:
+        db.query(models.AnexRecord).filter(
+            models.AnexRecord.patient_id == patient_id,
+            models.AnexRecord.id.in_(ids_to_delete)
+        ).delete(synchronize_session=False)
+
+    # Update existing records and create new ones
+    for record_data in records:
+        record_dict = record_data.model_dump()
+        record_id = record_dict.pop('id', None)
+        
+        if record_id is not None and record_id in existing_record_ids:
+            # Update
+            db.query(models.AnexRecord).filter(models.AnexRecord.id == record_id).update(record_dict)
+        else:
+            # Create
+            new_record = models.AnexRecord(**record_dict, patient_id=patient_id)
+            db.add(new_record)
+    
+    db.commit()
+    
+    # FIX: Was returning a list, now correctly returns a single patient object.
+    # We query for the single patient by ID to ensure we return the correct, updated object.
+    updated_patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
+    db.refresh(updated_patient) # Refresh to get latest data from the DB after commit
+    return updated_patient
+
 
 # --- Finance Functions ---
 def get_finance(db: Session, finance_id: int): return db.query(models.Finance).filter(models.Finance.id == finance_id).first()
@@ -149,4 +170,3 @@ def delete_service(db: Session, service_id: int):
     db_service = get_service(db, service_id)
     if db_service: db.delete(db_service); db.commit()
     return db_service
-

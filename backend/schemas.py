@@ -3,21 +3,31 @@ from typing import List, Optional
 from datetime import date, datetime
 
 # --- Base Schemas (for nesting) ---
-class Service(BaseModel):
-    id: int
+class ServiceBase(BaseModel):
     service_number: str
     research_name: str
+    laboratory_name: str
+    deadline: Optional[date] = None
+
+class Service(ServiceBase):
+    id: int
     class Config: from_attributes = True
 
-class Finance(BaseModel):
-    id: int
+class FinanceBase(BaseModel):
     funder_name: str
+    email: EmailStr
+    phone_number: Optional[str] = None
+
+class Finance(FinanceBase):
+    id: int
     class Config: from_attributes = True
     
 class User(BaseModel):
     id: int
     user_name: str
-    role: str # Added role here to be visible on patient view
+    first_name: str
+    last_name: str
+    role: str
     class Config: from_attributes = True
 
 # --- Token Schemas ---
@@ -47,7 +57,7 @@ class UserUpdate(BaseModel):
     last_name: Optional[str] = None
     phone_number: Optional[str] = None
     password: Optional[str] = None
-    role: Optional[str] = None # Allow role updates
+    role: Optional[str] = None
 
 class UserApprove(BaseModel):
     role: str
@@ -56,6 +66,27 @@ class UserInDB(UserBase):
     id: int
     role: str
     is_approved: bool
+    class Config: from_attributes = True
+
+# --- Anex Schemas ---
+class AnexRecordBase(BaseModel):
+    doctor_id: int
+    service_id: int
+    finance_id: Optional[int] = None
+    payable_amount: float = 0.0
+    paid_amount: float = 0.0
+
+class AnexRecordCreate(AnexRecordBase):
+    pass
+
+class AnexRecordUpdate(AnexRecordBase):
+    id: Optional[int] = None
+
+class AnexRecord(AnexRecordBase):
+    id: int
+    doctor: User
+    service: Service
+    finance: Optional[Finance] = None
     class Config: from_attributes = True
 
 # --- Patient Schemas ---
@@ -68,18 +99,15 @@ class PatientBase(BaseModel):
     address: Optional[str] = None
 
 class PatientCreate(PatientBase):
-    service_ids: Optional[List[int]] = []
-    finance_ids: Optional[List[int]] = []
+    pass # Simplified
 
 class PatientUpdate(PatientBase):
-    service_ids: Optional[List[int]] = []
-    finance_ids: Optional[List[int]] = []
+    pass # Simplified
 
 class Patient(PatientBase):
     id: int
-    services: List[Service] = []
-    finances: List[Finance] = []
-    users: List[User] = []
+    staff_assigned: List[User] = []
+    anex_records: List[AnexRecord] = []
     class Config: from_attributes = True
 
 # --- Invitation Schemas ---
@@ -93,13 +121,6 @@ class Invitation(InvitationBase):
     class Config: from_attributes = True
 
 # --- Finance Schemas (Full) ---
-class FinanceBase(BaseModel):
-    funder_name: str
-    email: EmailStr
-    phone_number: Optional[str] = None
-    paid_amount: float
-    payable_amount: float
-
 class FinanceCreate(FinanceBase): pass
 class FinanceUpdate(FinanceBase): pass
 class FinanceInDB(FinanceBase):
@@ -107,12 +128,6 @@ class FinanceInDB(FinanceBase):
     class Config: from_attributes = True
 
 # --- Service Schemas (Full) ---
-class ServiceBase(BaseModel):
-    service_number: str
-    research_name: str
-    laboratory_name: str
-    deadline: Optional[date] = None
-
 class ServiceCreate(ServiceBase): pass
 class ServiceUpdate(ServiceBase): pass
 class ServiceInDB(ServiceBase):
@@ -125,4 +140,3 @@ class PasswordVerify(BaseModel):
 
 # Update forward references
 Patient.model_rebuild()
-

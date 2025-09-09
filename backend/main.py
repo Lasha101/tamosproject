@@ -106,6 +106,13 @@ def delete_patient(patient_id: int, db: Session = Depends(get_db)):
     if not db_patient: raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
     return db_patient
 
+@app.put("/patients/{patient_id}/anex", response_model=schemas.Patient, dependencies=[Depends(auth.require_admin)])
+def sync_patient_anex_records(patient_id: int, records: List[schemas.AnexRecordUpdate], db: Session = Depends(get_db)):
+    db_patient = crud.sync_anex_records(db, patient_id, records)
+    if not db_patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return db_patient
+
 # --- Finance Routes (Admin Only) ---
 @app.get("/finances/", response_model=List[schemas.FinanceInDB], dependencies=[Depends(auth.require_admin)])
 def get_finances(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)): return crud.get_finances(db, skip, limit)
@@ -143,4 +150,3 @@ def delete_service(service_id: int, db: Session = Depends(get_db)):
     db_service = crud.delete_service(db, service_id)
     if not db_service: raise HTTPException(status.HTTP_404_NOT_FOUND, "Service record not found")
     return db_service
-

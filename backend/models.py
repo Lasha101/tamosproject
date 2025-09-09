@@ -7,22 +7,10 @@ from database import Base
 
 
 
-# Links Users (doctors or staff) and Patients
+# Links Users (staff) and Patients for general assignment
 user_patient_association = Table('user_patient_association', Base.metadata,
     Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
     Column('patient_id', Integer, ForeignKey('patients.id'), primary_key=True)
-)
-
-# Links Patients and Services
-patient_service_association = Table('patient_service_association', Base.metadata,
-    Column('patient_id', Integer, ForeignKey('patients.id'), primary_key=True),
-    Column('service_id', Integer, ForeignKey('services.id'), primary_key=True)
-)
-
-# Links Patients and Finances
-patient_finance_association = Table('patient_finance_association', Base.metadata,
-    Column('patient_id', Integer, ForeignKey('patients.id'), primary_key=True),
-    Column('finance_id', Integer, ForeignKey('finances.id'), primary_key=True)
 )
 
 # Links Users (doctors or staff) and Specialisations
@@ -30,7 +18,6 @@ user_specialisation_association = Table('user_specialisation_association', Base.
     Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
     Column('specialisation_id', Integer, ForeignKey('specialisations.id'), primary_key=True)
 )
-
 
 
 class User(Base):
@@ -45,8 +32,10 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, index=True, nullable=False) # e.g., "doctor", "staff"
     is_approved = Column(Boolean, default=False)
-    # Many-to-Many relationship to Patient
-    patients = relationship("Patient", secondary=user_patient_association, back_populates="users")
+    
+    # Many-to-Many relationship for general staff assignment to a Patient
+    patients_assigned = relationship("Patient", secondary=user_patient_association, back_populates="staff_assigned")
+    
     # Many-to-Many relationship to Specialisation
     specialisations = relationship("Specialisation", secondary=user_specialisation_association, back_populates="users")
 
@@ -72,13 +61,31 @@ class Patient(Base):
     last_name = Column(String, index=True)
     birth_date = Column(Date)
     nationality = Column(String, index=True)
-    personal_number = Column(String, index=True, nullable=False)
+    personal_number = Column(String, index=True, nullable=False, unique=True)
     address = Column(String, index=True)
 
-    # Many-to-Many relationships
-    users = relationship("User", secondary=user_patient_association, back_populates="patients")
-    services = relationship("Service", secondary=patient_service_association, back_populates="patients")
-    finances = relationship("Finance", secondary=patient_finance_association, back_populates="patients")
+    # Many-to-Many for general staff assignment
+    staff_assigned = relationship("User", secondary=user_patient_association, back_populates="patients_assigned")
+    
+    # One-to-Many for detailed Doctor->Service->Funder records
+    anex_records = relationship("AnexRecord", back_populates="patient", cascade="all, delete-orphan")
+
+
+class AnexRecord(Base):
+    """ Links a Patient to a specific Doctor, Service, and Funder with amounts. """
+    __tablename__ = "anex_records"
+    id = Column(Integer, primary_key=True, index=True)
+    patient_id = Column(Integer, ForeignKey('patients.id'), nullable=False)
+    doctor_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    service_id = Column(Integer, ForeignKey('services.id'), nullable=False)
+    finance_id = Column(Integer, ForeignKey('finances.id'), nullable=True) # Nullable for self-funding
+    payable_amount = Column(Float, default=0.0)
+    paid_amount = Column(Float, default=0.0)
+
+    patient = relationship("Patient", back_populates="anex_records")
+    doctor = relationship("User")
+    service = relationship("Service")
+    finance = relationship("Finance")
 
 
 class Service(Base):
@@ -90,9 +97,6 @@ class Service(Base):
     laboratory_name = Column(String, index=True, nullable=False)
     deadline = Column(Date)
     
-    # Many-to-Many relationship to Patient
-    patients = relationship("Patient", secondary=patient_service_association, back_populates="services")
-
 
 class Finance(Base):
     """Represents a financial record or transaction."""
@@ -101,12 +105,7 @@ class Finance(Base):
     funder_name = Column(String, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     phone_number = Column(String)
-    paid_amount = Column(Float, index=True)
-    payable_amount = Column(Float, index=True)
     
-    # Many-to-Many relationship to Patient
-    patients = relationship("Patient", secondary=patient_finance_association, back_populates="finances")
-
 
 class Invitation(Base):
     """Represents a one-time invitation for user registration."""
@@ -116,4 +115,3 @@ class Invitation(Base):
     token = Column(String, unique=True, index=True, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     is_used = Column(Boolean, default=False)
-
