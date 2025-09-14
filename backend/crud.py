@@ -1,8 +1,10 @@
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_
+from sqlalchemy.sql.functions import concat
 import models, schemas, auth
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 # --- User Functions ---
 def get_user(db: Session, user_id: int): return db.query(models.User).filter(models.User.id == user_id).first()
@@ -64,13 +66,34 @@ def get_invitation_by_email(db: Session, email: str): return db.query(models.Inv
 # --- Patient Functions ---
 def get_patient(db: Session, patient_id: int): return db.query(models.Patient).filter(models.Patient.id == patient_id).first()
 def get_patient_by_personal_number(db: Session, personal_number: str): return db.query(models.Patient).filter(models.Patient.personal_number == personal_number).first()
-def get_patients(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Patient).options(
+def get_patients(db: Session, skip: int = 0, limit: int = 100, filters: Dict[str, Optional[str]] = None):
+    query = db.query(models.Patient).options(
         joinedload(models.Patient.staff_assigned),
         joinedload(models.Patient.anex_records).joinedload(models.AnexRecord.doctor),
         joinedload(models.Patient.anex_records).joinedload(models.AnexRecord.service),
         joinedload(models.Patient.anex_records).joinedload(models.AnexRecord.finance),
-    ).order_by(models.Patient.id).offset(skip).limit(limit).all()
+    )
+
+    if filters:
+        if filters.get("personal_number"):
+            query = query.filter(models.Patient.personal_number.ilike(f"%{filters['personal_number']}%"))
+        if filters.get("lastname"):
+            query = query.filter(models.Patient.last_name.ilike(f"%{filters['lastname']}%"))
+        if filters.get("firstname"):
+            query = query.filter(models.Patient.first_name.ilike(f"%{filters['firstname']}%"))
+        if filters.get("doctor"):
+            search_like = f"%{filters['doctor']}%"
+            query = query.join(models.Patient.anex_records).join(models.AnexRecord.doctor).filter(
+                concat(models.User.first_name, ' ', models.User.last_name).ilike(search_like)
+            )
+        if filters.get("funder"):
+            query = query.join(models.Patient.anex_records).join(models.AnexRecord.finance).filter(models.Finance.funder_name.ilike(f"%{filters['funder']}%"))
+        if filters.get("research"):
+            query = query.join(models.Patient.anex_records).join(models.AnexRecord.service).filter(models.Service.research_name.ilike(f"%{filters['research']}%"))
+        if filters.get("staff"):
+            query = query.join(models.Patient.staff_assigned).filter(models.User.user_name.ilike(f"%{filters['staff']}%"))
+    
+    return query.distinct().order_by(models.Patient.id).offset(skip).limit(limit).all()
 
 def create_patient(db: Session, patient: schemas.PatientCreate, user_id: int):
     db_patient = models.Patient(**patient.model_dump())
@@ -105,7 +128,6 @@ def sync_anex_records(db: Session, patient_id: int, records: List[schemas.AnexRe
     existing_record_ids = {r.id for r in db_patient.anex_records}
     incoming_record_ids = {r.id for r in records if r.id is not None}
 
-    # Delete records that are no longer present
     ids_to_delete = existing_record_ids - incoming_record_ids
     if ids_to_delete:
         db.query(models.AnexRecord).filter(
@@ -113,25 +135,20 @@ def sync_anex_records(db: Session, patient_id: int, records: List[schemas.AnexRe
             models.AnexRecord.id.in_(ids_to_delete)
         ).delete(synchronize_session=False)
 
-    # Update existing records and create new ones
     for record_data in records:
         record_dict = record_data.model_dump()
         record_id = record_dict.pop('id', None)
         
         if record_id is not None and record_id in existing_record_ids:
-            # Update
             db.query(models.AnexRecord).filter(models.AnexRecord.id == record_id).update(record_dict)
         else:
-            # Create
             new_record = models.AnexRecord(**record_dict, patient_id=patient_id)
             db.add(new_record)
     
     db.commit()
     
-    # FIX: Was returning a list, now correctly returns a single patient object.
-    # We query for the single patient by ID to ensure we return the correct, updated object.
     updated_patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
-    db.refresh(updated_patient) # Refresh to get latest data from the DB after commit
+    db.refresh(updated_patient)
     return updated_patient
 
 
@@ -170,3 +187,4 @@ def delete_service(db: Session, service_id: int):
     db_service = get_service(db, service_id)
     if db_service: db.delete(db_service); db.commit()
     return db_service
+

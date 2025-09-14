@@ -45,6 +45,12 @@ const styles = `
   .anex-table input, .anex-table select { padding: 0.5rem; font-size: 0.9rem; }
   .amount-payable { color: var(--danger-color); font-weight: bold; }
   .amount-paid { color: var(--success-color); font-weight: bold; }
+  .filter-container { background: #fff; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .filter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; }
+  .filter-item { display: flex; flex-direction: column; }
+  .filter-item label { font-size: 0.875rem; margin-bottom: 0.4rem; color: #586069; }
+  .filter-item input { padding: 0.6rem; font-size: 0.9rem; }
+  .filter-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem; }
 `;
 
 // --- API Client & Helper ---
@@ -376,37 +382,65 @@ const Registration = () => {
 
 // --- Page Views ---
 const PatientsView = () => {
+    const initialFilters = { personal_number: '', lastname: '', firstname: '', doctor: '', funder: '', research: '', staff: '' };
     const [patients, setPatients] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
     const [anexPatient, setAnexPatient] = useState(null);
-
     const [allUsers, setAllUsers] = useState([]);
     const [allServices, setAllServices] = useState([]);
     const [allFinances, setAllFinances] = useState([]);
     const [apiError, setApiError] = useState('');
+    const [filters, setFilters] = useState(initialFilters);
     
     const doctors = useMemo(() => allUsers.filter(u => u.role === 'doctor' || u.role === 'admin'), [allUsers]);
     
-    const fetchItems = useCallback(async () => {  
-        try {  
+    const fetchPatients = useCallback(async (currentFilters) => {
+        try {
             setApiError('');
-            const [patientsRes, servicesRes, financesRes, usersRes] = await Promise.all([
-                apiClient.get('/patients/'),
-                apiClient.get('/services/'),
-                apiClient.get('/finances/'),
-                apiClient.get('/admin/users/') // Fetch all users for doctor list
-            ]);
+            // Remove empty keys from filters before sending
+            const activeFilters = Object.fromEntries(Object.entries(currentFilters).filter(([_, v]) => v !== ''));
+            const patientsRes = await apiClient.get('/patients/', { params: activeFilters });
             setPatients(patientsRes.data);
-            setAllServices(servicesRes.data);
-            setAllFinances(financesRes.data);
-            setAllUsers(usersRes.data);
-        } catch(e) { 
-            console.error("Failed to fetch data:", e);
-            setApiError("Failed to load page data. Please try again later.");
-        }  
+        } catch(e) {
+            console.error("Failed to fetch patients:", e);
+            setApiError("Failed to load patients. Please try again later.");
+        }
     }, []);
 
-    useEffect(() => { fetchItems(); }, [fetchItems]);
+    useEffect(() => {
+        const fetchDependencies = async () => {
+            try {
+                const [servicesRes, financesRes, usersRes] = await Promise.all([
+                    apiClient.get('/services/'),
+                    apiClient.get('/finances/'),
+                    apiClient.get('/admin/users/')
+                ]);
+                setAllServices(servicesRes.data);
+                setAllFinances(financesRes.data);
+                setAllUsers(usersRes.data);
+            } catch(e) {
+                console.error("Failed to fetch dependencies:", e);
+                setApiError("Failed to load page dependency data. Please try again later.");
+            }
+        };
+        fetchDependencies();
+        fetchPatients(filters); // Initial patient load
+    }, [fetchPatients]);
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        fetchPatients(filters);
+    };
+
+    const handleClearSearch = () => {
+        setFilters(initialFilters);
+        fetchPatients(initialFilters);
+    };
 
     const handleSave = async (formData) => {
         const method = formData.id ? 'put' : 'post';
@@ -414,8 +448,8 @@ const PatientsView = () => {
         try {
             setApiError('');
             await apiClient[method](url, formData);
-            setEditingItem(null); // Close modal on success
-            fetchItems();
+            setEditingItem(null);
+            handleClearSearch();
         } catch (error) {
             setApiError(error.response?.data?.detail || `Failed to save patient.`);
         }
@@ -426,7 +460,7 @@ const PatientsView = () => {
             setApiError('');
             await apiClient.put(`/patients/${patientId}/anex`, records);
             setAnexPatient(null);
-            fetchItems();
+            handleClearSearch();
         } catch (error) {
             setApiError(error.response?.data?.detail || 'Failed to save Anex details.');
         }
@@ -437,7 +471,7 @@ const PatientsView = () => {
             try {
                 setApiError('');
                 await apiClient.delete(`/patients/${id}`);
-                fetchItems();
+                handleClearSearch();
             } catch (error) {
                 alert(error.response?.data?.detail || "Failed to delete patient.");
             }
@@ -485,6 +519,24 @@ const PatientsView = () => {
 
         <div className="page-header"><h2>Manage Patients</h2><button className="btn btn-primary" onClick={handleAddClick}>Add Patient</button></div>
         
+        <div className="filter-container">
+            <form onSubmit={handleSearch}>
+                <div className="filter-grid">
+                    <div className="filter-item"><label>Personal N</label><input type="text" name="personal_number" value={filters.personal_number} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>Lastname</label><input type="text" name="lastname" value={filters.lastname} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>Firstname</label><input type="text" name="firstname" value={filters.firstname} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>Doctor</label><input type="text" name="doctor" value={filters.doctor} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>Funder</label><input type="text" name="funder" value={filters.funder} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>Research</label><input type="text" name="research" value={filters.research} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>Staff</label><input type="text" name="staff" value={filters.staff} onChange={handleFilterChange} /></div>
+                </div>
+                <div className="filter-actions">
+                    <button type="button" className="btn btn-secondary" onClick={handleClearSearch}>Clear</button>
+                    <button type="submit" className="btn btn-primary">Search</button>
+                </div>
+            </form>
+        </div>
+
         {apiError && !editingItem && !anexPatient && <p className="error-message">{apiError}</p>}
         <table>
             <thead><tr><th>Personal No.</th><th>Name</th><th>Birth Date</th><th>Assigned Staff</th><th>Actions</th></tr></thead>
@@ -747,7 +799,7 @@ const ServicesView = () => {
 };
 
 // --- Main Components ---
-const AdminDashboard = ({ handleLogout }) => { // Accept handleLogout as a prop
+const AdminDashboard = ({ handleLogout }) => {
     const [activeView, setActiveView] = useState('patients');
     const NavTab = ({ view, label }) => (<div className={`nav-tab ${activeView === view ? 'active' : ''}`} onClick={() => setActiveView(view)}>{label}</div>);
     

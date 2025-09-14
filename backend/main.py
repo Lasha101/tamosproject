@@ -86,8 +86,24 @@ def create_invitation(invitation: schemas.InvitationCreate, db: Session = Depend
 
 # --- Patient Routes ---
 @app.get("/patients/", response_model=List[schemas.Patient], dependencies=[Depends(auth.get_current_active_user)])
-def get_patients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_patients(db, skip, limit)
+def get_patients(
+    db: Session = Depends(get_db),
+    skip: int = 0, 
+    limit: int = 100, 
+    personal_number: Optional[str] = None,
+    lastname: Optional[str] = None,
+    firstname: Optional[str] = None,
+    doctor: Optional[str] = None,
+    funder: Optional[str] = None,
+    research: Optional[str] = None,
+    staff: Optional[str] = None
+):
+    filters = {
+        "personal_number": personal_number, "lastname": lastname, "firstname": firstname,
+        "doctor": doctor, "funder": funder, "research": research, "staff": staff
+    }
+    return crud.get_patients(db, skip=skip, limit=limit, filters=filters)
+
 
 @app.post("/patients/", response_model=schemas.Patient, dependencies=[Depends(auth.require_admin)])
 def create_patient(patient: schemas.PatientCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
@@ -100,15 +116,11 @@ def update_patient(patient_id: int, patient_update: schemas.PatientUpdate, db: S
     if not db_patient: raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
     return db_patient
 
-# FIX: Changed response_model to status_code=204
 @app.delete("/patients/{patient_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(auth.require_admin)])
 def delete_patient(patient_id: int, db: Session = Depends(get_db)):
-    # The crud function returns the deleted object or None if not found
     db_patient = crud.delete_patient(db, patient_id)
-    # We check if it was found before deletion
     if not db_patient:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
-    # A 204 response has no body, so we return None
     return None
 
 @app.put("/patients/{patient_id}/anex", response_model=schemas.Patient, dependencies=[Depends(auth.require_admin)])
@@ -147,7 +159,7 @@ def create_service(service: schemas.ServiceCreate, db: Session = Depends(get_db)
 @app.put("/services/{service_id}", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_admin)])
 def update_service(service_id: int, service_update: schemas.ServiceUpdate, db: Session = Depends(get_db)):
     db_service = crud.update_service(db, service_id, service_update)
-    if not db_service: raise HTTPException(status.HTTP_404_NOT_FOUND, "Service record not found")
+    if not db_service: raise HTTPException(status.HTTP_4G_NOT_FOUND, "Service record not found")
     return db_service
 
 @app.delete("/services/{service_id}", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_admin)])
