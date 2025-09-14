@@ -84,8 +84,8 @@ class AnexRecordUpdate(AnexRecordBase):
 
 class AnexRecord(AnexRecordBase):
     id: int
-    doctor: User
-    service: Service
+    doctor: Optional[User] = None
+    service: Optional[Service] = None
     finance: Optional[Finance] = None
     class Config: from_attributes = True
 

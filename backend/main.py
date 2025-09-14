@@ -159,7 +159,7 @@ def create_service(service: schemas.ServiceCreate, db: Session = Depends(get_db)
 @app.put("/services/{service_id}", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_admin)])
 def update_service(service_id: int, service_update: schemas.ServiceUpdate, db: Session = Depends(get_db)):
     db_service = crud.update_service(db, service_id, service_update)
-    if not db_service: raise HTTPException(status.HTTP_4G_NOT_FOUND, "Service record not found")
+    if not db_service: raise HTTPException(status.HTTP_404_NOT_FOUND, "Service record not found")
     return db_service
 
 @app.delete("/services/{service_id}", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_admin)])
