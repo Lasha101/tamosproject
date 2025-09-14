@@ -41,7 +41,7 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
     user = auth.authenticate_user(db, form_data.username, form_data.password)
     if user == "NOT_APPROVED": raise HTTPException(status.HTTP_403_FORBIDDEN, "Account not approved by admin.")
     if not user: raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect username or password")
-    return {"access_token": auth.create_access_token({"sub": user.user_name}), "token_type": "bearer"}
+    return {"access_token": auth.create_access_token({"sub": user.user_name, "role": user.role}), "token_type": "bearer"}
 
 @app.post("/users/", response_model=schemas.UserInDB)
 def register(user: schemas.UserCreate, token: str = Query(...), db: Session = Depends(get_db)):
@@ -49,8 +49,8 @@ def register(user: schemas.UserCreate, token: str = Query(...), db: Session = De
     if not created_user: raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid or expired invitation token.")
     return created_user
 
-# --- Admin Routes ---
-@app.post("/admin/verify-password", status_code=status.HTTP_204_NO_CONTENT)
+# --- User Management (Admin Only) ---
+@app.post("/admin/verify-password", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(auth.require_admin)])
 def verify_admin_password(payload: schemas.PasswordVerify, current_user: models.User = Depends(auth.require_admin)):
     if not auth.verify_password(payload.password, current_user.hashed_password): raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect password.")
 
@@ -84,6 +84,11 @@ def approve_user(user_id: int, approval_data: schemas.UserApprove, db: Session =
 def create_invitation(invitation: schemas.InvitationCreate, db: Session = Depends(get_db)):
     return crud.create_invitation(db=db, email=invitation.email)
 
+# --- General User List (for selection) ---
+@app.get("/users/list", response_model=List[schemas.User], dependencies=[Depends(auth.get_current_active_user)])
+def get_users_for_selection(db: Session = Depends(get_db)):
+    return crud.get_all_users_basic(db)
+
 # --- Patient Routes ---
 @app.get("/patients/", response_model=List[schemas.Patient], dependencies=[Depends(auth.get_current_active_user)])
 def get_patients(
@@ -104,13 +109,12 @@ def get_patients(
     }
     return crud.get_patients(db, skip=skip, limit=limit, filters=filters)
 
-
-@app.post("/patients/", response_model=schemas.Patient, dependencies=[Depends(auth.require_admin)])
-def create_patient(patient: schemas.PatientCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
+@app.post("/patients/", response_model=schemas.Patient, dependencies=[Depends(auth.require_modify_access)])
+def create_patient(patient: schemas.PatientCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_user)):
     if crud.get_patient_by_personal_number(db, patient.personal_number): raise HTTPException(status.HTTP_400_BAD_REQUEST, "Patient with this personal number already exists.")
     return crud.create_patient(db, patient, user_id=current_user.id)
 
-@app.put("/patients/{patient_id}", response_model=schemas.Patient, dependencies=[Depends(auth.require_admin)])
+@app.put("/patients/{patient_id}", response_model=schemas.Patient, dependencies=[Depends(auth.require_modify_access)])
 def update_patient(patient_id: int, patient_update: schemas.PatientUpdate, db: Session = Depends(get_db)):
     db_patient = crud.update_patient(db, patient_id, patient_update)
     if not db_patient: raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
@@ -123,21 +127,21 @@ def delete_patient(patient_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
     return None
 
-@app.put("/patients/{patient_id}/anex", response_model=schemas.Patient, dependencies=[Depends(auth.require_admin)])
-def sync_patient_anex_records(patient_id: int, records: List[schemas.AnexRecordUpdate], db: Session = Depends(get_db)):
-    db_patient = crud.sync_anex_records(db, patient_id, records)
+@app.put("/patients/{patient_id}/anex", response_model=schemas.Patient, dependencies=[Depends(auth.require_modify_access)])
+def sync_patient_anex_records(patient_id: int, records: List[schemas.AnexRecordUpdate], db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_user)):
+    db_patient = crud.sync_anex_records(db, patient_id, records, current_user)
     if not db_patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return db_patient
 
-# --- Finance Routes (Admin Only) ---
-@app.get("/finances/", response_model=List[schemas.FinanceInDB], dependencies=[Depends(auth.require_admin)])
+# --- Finance Routes ---
+@app.get("/finances/", response_model=List[schemas.FinanceInDB], dependencies=[Depends(auth.get_current_active_user)])
 def get_finances(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)): return crud.get_finances(db, skip, limit)
 
-@app.post("/finances/", response_model=schemas.FinanceInDB, dependencies=[Depends(auth.require_admin)])
+@app.post("/finances/", response_model=schemas.FinanceInDB, dependencies=[Depends(auth.require_modify_access)])
 def create_finance(finance: schemas.FinanceCreate, db: Session = Depends(get_db)): return crud.create_finance(db, finance)
 
-@app.put("/finances/{finance_id}", response_model=schemas.FinanceInDB, dependencies=[Depends(auth.require_admin)])
+@app.put("/finances/{finance_id}", response_model=schemas.FinanceInDB, dependencies=[Depends(auth.require_modify_access)])
 def update_finance(finance_id: int, finance_update: schemas.FinanceUpdate, db: Session = Depends(get_db)):
     db_finance = crud.update_finance(db, finance_id, finance_update)
     if not db_finance: raise HTTPException(status.HTTP_404_NOT_FOUND, "Finance record not found")
@@ -149,14 +153,14 @@ def delete_finance(finance_id: int, db: Session = Depends(get_db)):
     if not db_finance: raise HTTPException(status.HTTP_404_NOT_FOUND, "Finance record not found")
     return db_finance
 
-# --- Service Routes (Admin Only) ---
-@app.get("/services/", response_model=List[schemas.ServiceInDB], dependencies=[Depends(auth.require_admin)])
+# --- Service Routes ---
+@app.get("/services/", response_model=List[schemas.ServiceInDB], dependencies=[Depends(auth.get_current_active_user)])
 def get_services(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)): return crud.get_services(db, skip, limit)
 
-@app.post("/services/", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_admin)])
+@app.post("/services/", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_modify_access)])
 def create_service(service: schemas.ServiceCreate, db: Session = Depends(get_db)): return crud.create_service(db, service)
 
-@app.put("/services/{service_id}", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_admin)])
+@app.put("/services/{service_id}", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_modify_access)])
 def update_service(service_id: int, service_update: schemas.ServiceUpdate, db: Session = Depends(get_db)):
     db_service = crud.update_service(db, service_id, service_update)
     if not db_service: raise HTTPException(status.HTTP_404_NOT_FOUND, "Service record not found")

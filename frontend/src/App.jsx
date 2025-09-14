@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 // --- Configuration ---
 const API_BASE_URL = 'http://127.0.0.1:8000';
@@ -90,6 +91,7 @@ const UserFormFields = ({ formData, handleChange }) => (<>
         <select name="role" value={formData.role || 'staff'} onChange={handleChange}>
             <option value="staff">Staff</option>
             <option value="doctor">Doctor</option>
+            <option value="admin">Admin</option>
         </select>
     </div>
 </>);
@@ -166,7 +168,7 @@ const InvitationModal = ({ onClose }) => {
     );
 };
 
-const AnexModal = ({ patient, doctors, services, finances, onClose, onSave, apiError }) => {
+const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave, apiError }) => {
     const [records, setRecords] = useState(JSON.parse(JSON.stringify(patient.anex_records || [])));
     const [editingRowIndex, setEditingRowIndex] = useState(null);
 
@@ -180,7 +182,7 @@ const AnexModal = ({ patient, doctors, services, finances, onClose, onSave, apiE
         const newRecord = { doctor_id: '', service_id: '', finance_id: null, payable_amount: 0, paid_amount: 0 };
         const updatedRecords = [...records, newRecord];
         setRecords(updatedRecords);
-        setEditingRowIndex(updatedRecords.length - 1); // Automatically edit the new row
+        setEditingRowIndex(updatedRecords.length - 1);
     };
 
     const handleDeleteRecord = (index) => {
@@ -194,7 +196,6 @@ const AnexModal = ({ patient, doctors, services, finances, onClose, onSave, apiE
     };
 
     const handleApplyRowChanges = (index) => {
-        // You could add validation here before exiting edit mode
         const record = records[index];
         if (!record.doctor_id || !record.service_id) {
             alert("Doctor and Research fields are required.");
@@ -212,7 +213,6 @@ const AnexModal = ({ patient, doctors, services, finances, onClose, onSave, apiE
         onSave(patient.id, records);
     };
 
-    // Helper functions to find names for view mode
     const findDoctorNameById = (id) => {
         const doctor = doctors.find(d => d.id === id);
         return doctor ? `${doctor.first_name} ${doctor.last_name}` : 'Not Selected';
@@ -266,7 +266,7 @@ const AnexModal = ({ patient, doctors, services, finances, onClose, onSave, apiE
                                             <td><input className="amount-paid" type="number" step="0.01" value={rec.paid_amount} onChange={e => handleRecordChange(index, 'paid_amount', parseFloat(e.target.value) || 0)} /></td>
                                             <td className="actions">
                                                 <button type="button" className="btn btn-success btn-sm" onClick={() => handleApplyRowChanges(index)}>Apply</button>
-                                                <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDeleteRecord(index)}>Delete</button>
+                                                {user && user.role === 'admin' && <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDeleteRecord(index)}>Delete</button>}
                                             </td>
                                         </>
                                     ) : (
@@ -274,11 +274,11 @@ const AnexModal = ({ patient, doctors, services, finances, onClose, onSave, apiE
                                             <td>{findDoctorNameById(rec.doctor_id)}</td>
                                             <td>{findServiceNameById(rec.service_id)}</td>
                                             <td>{findFunderNameById(rec.finance_id)}</td>
-                                            <td><span className="amount-payable">${rec.payable_amount.toFixed(2)}</span></td>
-                                            <td><span className="amount-paid">${rec.paid_amount.toFixed(2)}</span></td>
+                                            <td><span className="amount-payable">${(rec.payable_amount || 0).toFixed(2)}</span></td>
+                                            <td><span className="amount-paid">${(rec.paid_amount || 0).toFixed(2)}</span></td>
                                             <td className="actions">
                                                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleEditClick(index)}>Edit</button>
-                                                <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDeleteRecord(index)}>Delete</button>
+                                                {user && user.role === 'admin' && <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDeleteRecord(index)}>Delete</button>}
                                             </td>
                                         </>
                                     )}
@@ -300,7 +300,7 @@ const AnexModal = ({ patient, doctors, services, finances, onClose, onSave, apiE
 
 // --- Auth Components ---
 const Login = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -312,8 +312,9 @@ const Login = ({ onLoginSuccess }) => {
     setError('');
     try {
       const response = await apiClient.post('/token', new URLSearchParams({ username, password }));
-      localStorage.setItem('accessToken', response.data.access_token);
-      onLoginSuccess();
+      const token = response.data.access_token;
+      localStorage.setItem('accessToken', token);
+      onLoginSuccess(token);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.detail || "An error occurred during login.");
@@ -324,7 +325,7 @@ const Login = ({ onLoginSuccess }) => {
 
   return (
     <div className="form-container">
-      <h1>Admin Login</h1>
+      <h1>Login</h1>
       <form onSubmit={handleSubmit}>
         <div className="form-group"><label>Username</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
         <div className="form-group"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
@@ -381,7 +382,7 @@ const Registration = () => {
 
 
 // --- Page Views ---
-const PatientsView = () => {
+const PatientsView = ({ user }) => {
     const initialFilters = { personal_number: '', lastname: '', firstname: '', doctor: '', funder: '', research: '', staff: '' };
     const [patients, setPatients] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
@@ -397,7 +398,6 @@ const PatientsView = () => {
     const fetchPatients = useCallback(async (currentFilters) => {
         try {
             setApiError('');
-            // Remove empty keys from filters before sending
             const activeFilters = Object.fromEntries(Object.entries(currentFilters).filter(([_, v]) => v !== ''));
             const patientsRes = await apiClient.get('/patients/', { params: activeFilters });
             setPatients(patientsRes.data);
@@ -413,7 +413,7 @@ const PatientsView = () => {
                 const [servicesRes, financesRes, usersRes] = await Promise.all([
                     apiClient.get('/services/'),
                     apiClient.get('/finances/'),
-                    apiClient.get('/admin/users/')
+                    apiClient.get('/users/list')
                 ]);
                 setAllServices(servicesRes.data);
                 setAllFinances(financesRes.data);
@@ -424,7 +424,7 @@ const PatientsView = () => {
             }
         };
         fetchDependencies();
-        fetchPatients(filters); // Initial patient load
+        fetchPatients(filters);
     }, [fetchPatients]);
 
     const handleFilterChange = (e) => {
@@ -508,6 +508,7 @@ const PatientsView = () => {
         </FormModal>}
 
         {anexPatient && <AnexModal 
+            user={user}
             patient={anexPatient}
             doctors={doctors}
             services={allServices}
@@ -555,7 +556,7 @@ const PatientsView = () => {
                     <td className="actions">
                         <button className="btn btn-primary btn-sm" onClick={() => handleAnexClick(item)}>Anex</button>
                         <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>
+                        {user.role === 'admin' && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>}
                     </td>
                 </tr>)}
             </tbody>
@@ -563,7 +564,7 @@ const PatientsView = () => {
     </div>);
 };
 
-const UsersView = () => {
+const UsersView = ({ user }) => {
     const [users, setUsers] = useState([]);
     const [editingUser, setEditingUser] = useState(null);
     const [approvalRoles, setApprovalRoles] = useState({});
@@ -600,7 +601,7 @@ const UsersView = () => {
 
     const handleApprove = async (userId) => {
         try {
-            const role = approvalRoles[userId] || 'staff'; // Default to staff if not selected
+            const role = approvalRoles[userId] || 'staff';
             await apiClient.post(`/admin/users/${userId}/approve`, { role });
             fetchUsers();
         } catch(error) {
@@ -642,27 +643,27 @@ const UsersView = () => {
             </div>
         </div>
         <table><thead><tr><th>Name</th><th>Email</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-            {users.map(user => (<tr key={user.id}>
-                <td>{user.first_name} {user.last_name}</td><td>{user.email}</td><td>{user.user_name}</td>
-                <td>{user.role}</td>
-                <td><span className={`status-badge ${user.is_approved ? 'status-approved' : 'status-pending'}`}>{user.is_approved ? 'Approved' : 'Pending'}</span></td>
+            {users.map(item => (<tr key={item.id}>
+                <td>{item.first_name} {item.last_name}</td><td>{item.email}</td><td>{item.user_name}</td>
+                <td>{item.role}</td>
+                <td><span className={`status-badge ${item.is_approved ? 'status-approved' : 'status-pending'}`}>{item.is_approved ? 'Approved' : 'Pending'}</span></td>
                 <td className="actions">
-                    {!user.is_approved ? (
+                    {!item.is_approved ? (
                         <>
                             <select 
-                                value={approvalRoles[user.id] || 'staff'} 
-                                onChange={(e) => setApprovalRoles(prev => ({...prev, [user.id]: e.target.value}))}
+                                value={approvalRoles[item.id] || 'staff'} 
+                                onChange={(e) => setApprovalRoles(prev => ({...prev, [item.id]: e.target.value}))}
                                 style={{width: '100px', marginRight: '0.5rem'}}
                             >
                                 <option value="staff">Staff</option>
                                 <option value="doctor">Doctor</option>
                             </select>
-                            <button className="btn btn-success btn-sm" onClick={() => handleApprove(user.id)}>Approve</button>
+                            <button className="btn btn-success btn-sm" onClick={() => handleApprove(item.id)}>Approve</button>
                         </>
                     ) : (
                         <>
-                            <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(user)}>Edit</button>
-                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(user.id)}>Delete</button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
+                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>
                         </>
                     )}
                 </td>
@@ -671,7 +672,7 @@ const UsersView = () => {
     </div>);
 };
 
-const FinanceView = () => {
+const FinanceView = ({ user }) => {
     const [finances, setFinances] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
     const [apiError, setApiError] = useState('');
@@ -729,13 +730,13 @@ const FinanceView = () => {
         <table><thead><tr><th>Funder</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead><tbody>
             {finances.map(item => <tr key={item.id}><td>{item.funder_name}</td><td>{item.email}</td><td>{item.phone_number}</td><td className="actions">
                 <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
-                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>
+                {user.role === 'admin' && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>}
             </td></tr>)}
         </tbody></table>
     </div>);
 };
 
-const ServicesView = () => {
+const ServicesView = ({ user }) => {
     const [services, setServices] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
     const [apiError, setApiError] = useState('');
@@ -792,69 +793,84 @@ const ServicesView = () => {
         <table><thead><tr><th>Service No.</th><th>Research Name</th><th>Lab Name</th><th>Deadline</th><th>Actions</th></tr></thead><tbody>
             {services.map(item => <tr key={item.id}><td>{item.service_number}</td><td>{item.research_name}</td><td>{item.laboratory_name}</td><td>{item.deadline}</td><td className="actions">
                 <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
-                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>
+                {user.role === 'admin' && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>}
             </td></tr>)}
         </tbody></table>
     </div>);
 };
 
 // --- Main Components ---
-const AdminDashboard = ({ handleLogout }) => {
+const Dashboard = ({ user, handleLogout }) => {
     const [activeView, setActiveView] = useState('patients');
     const NavTab = ({ view, label }) => (<div className={`nav-tab ${activeView === view ? 'active' : ''}`} onClick={() => setActiveView(view)}>{label}</div>);
     
     return ( 
         <div className="container">
-            <div className="page-header"><h1>Admin Panel</h1><button className="btn btn-secondary" onClick={handleLogout}>Logout</button></div>
+            <div className="page-header"><h1>Management Panel</h1><button className="btn btn-secondary" onClick={handleLogout}>Logout</button></div>
             <nav className="nav-tabs">
                 <NavTab view="patients" label="Patients" />
-                <NavTab view="users" label="Users" />
+                {user.role === 'admin' && <NavTab view="users" label="Users" />}
                 <NavTab view="finance" label="Finance" />
                 <NavTab view="services" label="Services" />
             </nav>
-            {activeView === 'patients' && <PatientsView />}
-            {activeView === 'users' && <UsersView />}
-            {activeView === 'finance' && <FinanceView />}
-            {activeView === 'services' && <ServicesView />}
+            {activeView === 'patients' && <PatientsView user={user} />}
+            {activeView === 'users' && user.role === 'admin' && <UsersView user={user} />}
+            {activeView === 'finance' && <FinanceView user={user} />}
+            {activeView === 'services' && <ServicesView user={user} />}
         </div> 
     );
 };
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (token) {
-      setIsAuthenticated(true);
+        try {
+            const decoded = jwtDecode(token);
+            if (decoded.exp * 1000 > Date.now()) {
+                setUser({ role: decoded.role, username: decoded.sub });
+            } else {
+                localStorage.removeItem('accessToken');
+            }
+        } catch (error) {
+            console.error("Invalid token");
+            localStorage.removeItem('accessToken');
+        }
     }
     setLoading(false);
   }, []);
   
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
+  const handleLoginSuccess = (token) => {
+    try {
+        const decoded = jwtDecode(token);
+        setUser({ role: decoded.role, username: decoded.sub });
+    } catch (error) {
+        console.error("Failed to decode token on login", error);
+    }
   };
   
   const handleLogout = (navigate) => {
     localStorage.removeItem('accessToken');
-    setIsAuthenticated(false);
+    setUser(null);
     navigate('/login');
   };
   
   const ProtectedRoute = ({ children }) => { 
     const navigate = useNavigate(); 
     useEffect(() => { 
-        if (!loading && !isAuthenticated) {
+        if (!loading && !user) {
             navigate('/login'); 
         }
-    }, [isAuthenticated, loading, navigate]); 
+    }, [user, loading, navigate]); 
     
     if (loading) {
-        return null; // Or a loading spinner component
+        return null;
     }
 
-    return isAuthenticated ? React.cloneElement(children, { handleLogout: () => handleLogout(navigate) }) : null; 
+    return user ? React.cloneElement(children, { user, handleLogout: () => handleLogout(navigate) }) : null; 
   };
   
   return ( 
@@ -864,7 +880,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/register" element={<Registration />} />
-          <Route path="/" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         </Routes> 
       </BrowserRouter> 
     </> 

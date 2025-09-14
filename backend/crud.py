@@ -11,6 +11,7 @@ def get_user(db: Session, user_id: int): return db.query(models.User).filter(mod
 def get_user_by_username(db: Session, username: str): return db.query(models.User).filter(models.User.user_name == username).first()
 def get_user_by_email(db: Session, email: str): return db.query(models.User).filter(models.User.email == email).first()
 def get_users(db: Session, skip: int = 0, limit: int = 100): return db.query(models.User).filter(models.User.user_name != "admin").offset(skip).limit(limit).all()
+def get_all_users_basic(db: Session): return db.query(models.User).filter(models.User.is_approved == True).all()
 
 def create_user(db: Session, user: schemas.UserCreate, token: Optional[str] = None):
     is_approved_status = False if token else True
@@ -98,9 +99,9 @@ def get_patients(db: Session, skip: int = 0, limit: int = 100, filters: Dict[str
 def create_patient(db: Session, patient: schemas.PatientCreate, user_id: int):
     db_patient = models.Patient(**patient.model_dump())
     
-    admin_user = get_user(db, user_id)
-    if admin_user:
-        db_patient.staff_assigned.append(admin_user)
+    current_user = get_user(db, user_id)
+    if current_user:
+        db_patient.staff_assigned.append(current_user)
 
     db.add(db_patient); db.commit(); db.refresh(db_patient)
     return db_patient
@@ -120,7 +121,7 @@ def delete_patient(db: Session, patient_id: int):
     if db_patient: db.delete(db_patient); db.commit()
     return db_patient
 
-def sync_anex_records(db: Session, patient_id: int, records: List[schemas.AnexRecordUpdate]):
+def sync_anex_records(db: Session, patient_id: int, records: List[schemas.AnexRecordUpdate], current_user: models.User):
     db_patient = db.query(models.Patient).options(joinedload(models.Patient.anex_records)).filter(models.Patient.id == patient_id).first()
     if not db_patient:
         return None
@@ -128,27 +129,34 @@ def sync_anex_records(db: Session, patient_id: int, records: List[schemas.AnexRe
     existing_record_ids = {r.id for r in db_patient.anex_records}
     incoming_record_ids = {r.id for r in records if r.id is not None}
 
-    ids_to_delete = existing_record_ids - incoming_record_ids
-    if ids_to_delete:
-        db.query(models.AnexRecord).filter(
-            models.AnexRecord.patient_id == patient_id,
-            models.AnexRecord.id.in_(ids_to_delete)
-        ).delete(synchronize_session=False)
+    # Only an admin can delete records by omitting them from the list
+    if current_user.role == 'admin':
+        ids_to_delete = existing_record_ids - incoming_record_ids
+        if ids_to_delete:
+            db.query(models.AnexRecord).filter(
+                models.AnexRecord.patient_id == patient_id,
+                models.AnexRecord.id.in_(ids_to_delete)
+            ).delete(synchronize_session=False)
 
     for record_data in records:
         record_dict = record_data.model_dump()
         record_id = record_dict.pop('id', None)
         
         if record_id is not None and record_id in existing_record_ids:
+            # Update existing record
             db.query(models.AnexRecord).filter(models.AnexRecord.id == record_id).update(record_dict)
         else:
+            # Add new record
             new_record = models.AnexRecord(**record_dict, patient_id=patient_id)
             db.add(new_record)
     
     db.commit()
     
-    updated_patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
-    db.refresh(updated_patient)
+    # Re-fetch the patient to get the updated state
+    updated_patient = db.query(models.Patient).options(
+        joinedload(models.Patient.anex_records)
+    ).filter(models.Patient.id == patient_id).first()
+
     return updated_patient
 
 
@@ -187,4 +195,3 @@ def delete_service(db: Session, service_id: int):
     db_service = get_service(db, service_id)
     if db_service: db.delete(db_service); db.commit()
     return db_service
-
