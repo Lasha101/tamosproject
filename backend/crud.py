@@ -143,7 +143,11 @@ def get_patients(db: Session, skip: int = 0, limit: int = 100, filters: Dict[str
                 concat(models.User.first_name, ' ', models.User.last_name).ilike(search_like)
             )
         if filters.get("funder"):
-            query = query.join(models.Patient.anex_records).join(models.AnexRecord.finance).filter(models.Finance.funder_name.ilike(f"%{filters['funder']}%"))
+            funder_search = filters["funder"].lower()
+            if 'self' in funder_search:
+                query = query.join(models.Patient.anex_records).filter(models.AnexRecord.finance_id.is_(None))
+            else:
+                query = query.join(models.Patient.anex_records).join(models.AnexRecord.finance).filter(models.Finance.funder_name.ilike(f"%{filters['funder']}%"))
         if filters.get("research"):
             query = query.join(models.Patient.anex_records).join(models.AnexRecord.service).filter(models.Service.research_name.ilike(f"%{filters['research']}%"))
         if filters.get("staff"):
@@ -190,6 +194,13 @@ def delete_patient(db: Session, patient_id: int, current_user: models.User):
         db.delete(db_patient)
         db.commit()
     return db_patient
+
+def delete_patient_by_personal_number(db: Session, personal_number: str, current_user: models.User):
+    db_patient = get_patient_by_personal_number(db, personal_number)
+    if db_patient:
+        # Re-use the id-based delete function which already contains logging logic
+        return delete_patient(db, db_patient.id, current_user)
+    return None
 
 def sync_anex_records(db: Session, patient_id: int, records: List[schemas.AnexRecordUpdate], current_user: models.User):
     db_patient = db.query(models.Patient).options(joinedload(models.Patient.anex_records)).filter(models.Patient.id == patient_id).first()

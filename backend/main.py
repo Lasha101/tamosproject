@@ -84,6 +84,25 @@ def approve_user(user_id: int, approval_data: schemas.UserApprove, db: Session =
 def create_invitation(invitation: schemas.InvitationCreate, db: Session = Depends(get_db)):
     return crud.create_invitation(db=db, email=invitation.email)
 
+# --- Admin Patient Deletion ---
+@app.get("/admin/find-patient/{personal_number}", response_model=schemas.Patient, dependencies=[Depends(auth.require_admin)])
+def find_patient_for_deletion(personal_number: str, db: Session = Depends(get_db)):
+    db_patient = crud.get_patient_by_personal_number(db, personal_number)
+    if not db_patient:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient with this personal number not found.")
+    return db_patient
+
+@app.post("/admin/delete-patient", status_code=status.HTTP_204_NO_CONTENT)
+def centralized_patient_delete(payload: schemas.AdminPatientDelete, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
+    if not auth.verify_password(payload.password, current_user.hashed_password):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect admin password.")
+    
+    deleted_patient = crud.delete_patient_by_personal_number(db, payload.personal_number, current_user)
+    if not deleted_patient:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient with this personal number not found.")
+    
+    return None
+
 # --- General User List (for selection) ---
 @app.get("/users/list", response_model=List[schemas.User], dependencies=[Depends(auth.get_current_active_user)])
 def get_users_for_selection(db: Session = Depends(get_db)):
@@ -120,8 +139,10 @@ def update_patient(patient_id: int, patient_update: schemas.PatientUpdate, db: S
     if not db_patient: raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
     return db_patient
 
-@app.delete("/patients/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/patients/{patient_id}", status_code=status.HTTP_204_NO_CONTENT, deprecated=True)
 def delete_patient(patient_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
+    # This endpoint is maintained for now but deprecated in favor of the centralized one.
+    # It could be removed in the future. The frontend will no longer use it.
     db_patient = crud.delete_patient(db, patient_id, current_user)
     if not db_patient:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")

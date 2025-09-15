@@ -162,6 +162,10 @@ class HistoryLog(BaseModel):
 class PasswordVerify(BaseModel):
     password: str
 
+class AdminPatientDelete(BaseModel):
+    personal_number: str
+    password: str
+
 # Update forward references
 Patient.model_rebuild()
 HistoryLog.model_rebuild()

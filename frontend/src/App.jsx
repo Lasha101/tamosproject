@@ -13,13 +13,14 @@ const styles = `
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 0; background-color: var(--secondary-color); color: var(--text-color); }
   .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
   .form-container { max-width: 450px; margin: 5rem auto; padding: 2.5rem; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
-  h1, h2 { color: var(--primary-color); }
+  h1, h2, h3 { color: var(--primary-color); }
   .form-group { margin-bottom: 1.5rem; text-align: left; }
   label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555; }
   input, select, textarea { width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; transition: all 0.2s; font-size: 1rem; }
   select[multiple] { height: 120px; }
   .btn { padding: 0.8rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background-color: var(--primary-color); color: white; }
   .btn:hover { opacity: 0.9; }
+  .btn:disabled { background-color: #ccc; cursor: not-allowed; }
   .btn.btn-primary { background-color: var(--primary-color); color: white; }
   .btn.btn-danger { background-color: var(--danger-color); color: white; }
   .btn.btn-success { background-color: var(--success-color); color: white; }
@@ -30,9 +31,12 @@ const styles = `
   th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
   .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
   .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+  .page-header .action-group { display: flex; gap: 1rem; }
   .status-badge { padding: 0.25em 0.6em; font-size: 0.75rem; font-weight: 700; border-radius: 2em; text-transform: uppercase; }
   .status-pending { background-color: var(--pending-color); color: white; } .status-approved { background-color: var(--success-color); color: white; }
-  .error-message { color: var(--danger-color); margin-top: 1rem; text-align:center; padding: 0.5rem; border-radius: 4px; background-color: rgba(217, 83, 79, 0.1); }
+  .message-box { margin-top: 1rem; text-align:center; padding: 0.8rem; border-radius: 4px; }
+  .error-message { color: var(--danger-color); background-color: rgba(217, 83, 79, 0.1); }
+  .success-message { color: var(--success-color); background-color: rgba(92, 184, 92, 0.1); }
   .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
   .modal-content { background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 1200px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
   .modal-footer { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
@@ -55,6 +59,8 @@ const styles = `
   .change-detail ul { margin: 0; padding-left: 1.2rem; } .change-detail li { margin-bottom: 0.3rem; font-size: 0.9rem; }
   .change-before { color: #c93a40; background-color: #fde8e8; padding: 0.1em 0.4em; border-radius: 4px; font-family: monospace;}
   .change-after { color: #2e7d32; background-color: #e7f4e4; padding: 0.1em 0.4em; border-radius: 4px; font-family: monospace; }
+  .final-warning { font-size: 1.2rem; color: var(--danger-color); font-weight: bold; text-align: center; }
+  .patient-info-box { padding: 1rem; background-color: var(--secondary-color); border-radius: 6px; margin-bottom: 1.5rem; text-align: center; }
 `;
 
 // --- API Client & Helper ---
@@ -71,7 +77,7 @@ const FormModal = ({ title, children, onClose, onSubmit, apiError }) => (
             <h2>{title}</h2>
             <form onSubmit={onSubmit}>
                 {children}
-                {apiError && <p className="error-message" style={{marginTop: '1.5rem'}}>{apiError}</p>}
+                {apiError && <p className="error-message message-box">{apiError}</p>}
                 <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
                     <button type="submit" className="btn btn-primary">Save</button>
@@ -154,7 +160,7 @@ const InvitationModal = ({ onClose }) => {
                     <label>User's Email</label>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter email to invite" />
                 </div>
-                {apiError && <p className="error-message">{apiError}</p>}
+                {apiError && <p className="error-message message-box">{apiError}</p>}
                 {invitationLink && (
                     <div className="invitation-link-container">
                         <p>Share this link with the user:</p><code>{invitationLink}</code>
@@ -290,7 +296,7 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
                         </tbody>
                     </table>
                     <button type="button" className="btn btn-secondary" style={{marginTop: '1rem'}} onClick={handleAddRecord} disabled={editingRowIndex !== null}>Add Record</button>
-                    {apiError && <p className="error-message" style={{marginTop: '1.5rem'}}>{apiError}</p>}
+                    {apiError && <p className="error-message message-box">{apiError}</p>}
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
                         <button type="submit" className="btn btn-primary">Save Changes</button>
@@ -332,7 +338,7 @@ const Login = ({ onLoginSuccess }) => {
       <form onSubmit={handleSubmit}>
         <div className="form-group"><label>Username</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
         <div className="form-group"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
-        {error && <p className="error-message">{error}</p>}
+        {error && <p className="error-message message-box">{error}</p>}
         <button type="submit" className="btn btn-primary" style={{width: '100%'}} disabled={isLoading}>{isLoading ? 'Logging in...' : 'Login'}</button>
       </form>
     </div>
@@ -376,13 +382,118 @@ const Registration = () => {
                 <div className="form-group"><label>Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} required /></div>
                 <div className="form-group"><label>Username</label><input type="text" name="user_name" value={formData.user_name} onChange={handleChange} required /></div>
                 <div className="form-group"><label>Password</label><input type="password" name="password" onChange={handleChange} required /></div>
-                {error && <p className="error-message">{error}</p>}
+                {error && <p className="error-message message-box">{error}</p>}
                 <button type="submit" className="btn btn-primary" style={{width: '100%'}} disabled={isLoading}>{isLoading ? 'Registering...' : 'Register'}</button>
             </form>
         </div>
     );
 };
 
+const DeletePatientModal = ({ onClose, onSuccess }) => {
+    const [step, setStep] = useState(1);
+    const [personalNumber, setPersonalNumber] = useState('');
+    const [password, setPassword] = useState('');
+    const [patientInfo, setPatientInfo] = useState(null);
+    const [message, setMessage] = useState({ type: '', text: '' });
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleFindPatient = async (e) => {
+        e.preventDefault();
+        if (!personalNumber) {
+            setMessage({ type: 'error', text: 'Personal number cannot be empty.' });
+            return;
+        }
+        setIsLoading(true);
+        setMessage({ type: '', text: '' });
+        try {
+            const response = await apiClient.get(`/admin/find-patient/${personalNumber}`);
+            setPatientInfo(response.data);
+            setStep(2);
+        } catch (error) {
+            setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to find patient.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleFinalDelete = async () => {
+        setIsLoading(true);
+        setMessage({ type: '', text: '' });
+        try {
+            await apiClient.post('/admin/delete-patient', { personal_number: personalNumber, password });
+            onSuccess(); // This will close the modal and refresh the list
+        } catch (error) {
+            setMessage({ type: 'error', text: error.response?.data?.detail || 'Deletion failed.' });
+            setStep(2); // Go back to password step on failure
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const renderStep = () => {
+        switch(step) {
+            case 1:
+                return (
+                    <form onSubmit={handleFindPatient}>
+                        <p>Enter the personal number of the patient you wish to permanently delete.</p>
+                        <div className="form-group">
+                            <label>Personal Number</label>
+                            <input type="text" value={personalNumber} onChange={e => setPersonalNumber(e.target.value)} required autoFocus/>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                            <button type="submit" className="btn btn-primary" disabled={isLoading}>{isLoading ? 'Finding...' : 'Find Patient'}</button>
+                        </div>
+                    </form>
+                );
+            case 2:
+                return (
+                     <form onSubmit={(e) => { e.preventDefault(); setMessage({type:'',text:''}); setStep(3); }}>
+                        <div className="patient-info-box">
+                            <p>You are about to delete:</p>
+                            <h3>{patientInfo.first_name} {patientInfo.last_name}</h3>
+                            <p>(Personal N: {patientInfo.personal_number})</p>
+                        </div>
+                        <p>Enter your admin password to continue.</p>
+                         <div className="form-group">
+                             <label>Password</label>
+                             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoFocus/>
+                         </div>
+                         <div className="modal-footer">
+                             <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>Back</button>
+                             <button type="submit" className="btn btn-danger">Continue</button>
+                         </div>
+                     </form>
+                );
+            case 3:
+                return (
+                    <div>
+                        <div className="patient-info-box">
+                            <p className="final-warning">All related data will be deleted also!</p>
+                            <p>This action is irreversible.</p>
+                        </div>
+                        <div className="modal-footer">
+                             <button type="button" className="btn btn-secondary" onClick={() => setStep(2)}>Back</button>
+                             <button type="button" className="btn btn-success" style={{flexGrow: 1}} onClick={handleFinalDelete} disabled={isLoading}>
+                                 {isLoading ? 'Deleting...' : 'OK'}
+                             </button>
+                         </div>
+                    </div>
+                );
+            default: return null;
+        }
+    }
+
+    return (
+        <div className="modal-backdrop">
+            <div className="modal-content" style={{maxWidth: '500px'}}>
+                <h2>Secure Patient Deletion</h2>
+                {message.text && <div className={`message-box ${message.type}-message`}>{message.text}</div>}
+                {renderStep()}
+            </div>
+        </div>
+    );
+};
 
 // --- Page Views ---
 const PatientsView = ({ user }) => {
@@ -395,6 +506,7 @@ const PatientsView = ({ user }) => {
     const [allFinances, setAllFinances] = useState([]);
     const [apiError, setApiError] = useState('');
     const [filters, setFilters] = useState(initialFilters);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     
     const doctors = useMemo(() => allUsers.filter(u => u.role === 'doctor' || u.role === 'admin'), [allUsers]);
     
@@ -468,18 +580,6 @@ const PatientsView = ({ user }) => {
             setApiError(error.response?.data?.detail || 'Failed to save Anex details.');
         }
     };
-
-    const handleDelete = async (id) => {
-        if (window.confirm(`Delete patient? This cannot be undone.`)) {
-            try {
-                setApiError('');
-                await apiClient.delete(`/patients/${id}`);
-                handleClearSearch();
-            } catch (error) {
-                alert(error.response?.data?.detail || "Failed to delete patient.");
-            }
-        }
-    };
     
     const handleEditClick = (item) => {
         setEditingItem({ ...item });
@@ -501,6 +601,14 @@ const PatientsView = ({ user }) => {
     };
 
     return (<div>
+        {isDeleteModalOpen && <DeletePatientModal 
+            onClose={() => setIsDeleteModalOpen(false)}
+            onSuccess={() => {
+                setIsDeleteModalOpen(false);
+                handleClearSearch();
+            }}
+        />}
+
         {editingItem && <FormModal 
             title={editingItem.id ? "Edit Patient" : "Add Patient"} 
             onClose={() => setEditingItem(null)} 
@@ -521,7 +629,15 @@ const PatientsView = ({ user }) => {
             apiError={apiError}
         />}
 
-        <div className="page-header"><h2>Manage Patients</h2><button className="btn btn-primary" onClick={handleAddClick}>Add Patient</button></div>
+        <div className="page-header">
+            <h2>Manage Patients</h2>
+            <div className="action-group">
+                <button className="btn btn-primary" onClick={handleAddClick}>Add Patient</button>
+                {user.role === 'admin' && (
+                    <button className="btn btn-danger" onClick={() => setIsDeleteModalOpen(true)}>Delete Patient</button>
+                )}
+            </div>
+        </div>
         
         <div className="filter-container">
             <form onSubmit={handleSearch}>
@@ -530,7 +646,7 @@ const PatientsView = ({ user }) => {
                     <div className="filter-item"><label>Lastname</label><input type="text" name="lastname" value={filters.lastname} onChange={handleFilterChange} /></div>
                     <div className="filter-item"><label>Firstname</label><input type="text" name="firstname" value={filters.firstname} onChange={handleFilterChange} /></div>
                     <div className="filter-item"><label>Doctor</label><input type="text" name="doctor" value={filters.doctor} onChange={handleFilterChange} /></div>
-                    <div className="filter-item"><label>Funder</label><input type="text" name="funder" value={filters.funder} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>Funder</label><input type="text" name="funder" value={filters.funder} onChange={handleFilterChange} placeholder="Enter name or 'self'" /></div>
                     <div className="filter-item"><label>Research</label><input type="text" name="research" value={filters.research} onChange={handleFilterChange} /></div>
                     <div className="filter-item"><label>Staff</label><input type="text" name="staff" value={filters.staff} onChange={handleFilterChange} /></div>
                 </div>
@@ -541,7 +657,7 @@ const PatientsView = ({ user }) => {
             </form>
         </div>
 
-        {apiError && !editingItem && !anexPatient && <p className="error-message">{apiError}</p>}
+        {apiError && !editingItem && !anexPatient && <p className="error-message message-box">{apiError}</p>}
         <table>
             <thead><tr><th>Personal No.</th><th>Name</th><th>Birth Date</th><th>Assigned Staff</th><th>Actions</th></tr></thead>
             <tbody>
@@ -559,7 +675,6 @@ const PatientsView = ({ user }) => {
                     <td className="actions">
                         <button className="btn btn-primary btn-sm" onClick={() => handleAnexClick(item)}>Anex</button>
                         <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
-                        {user.role === 'admin' && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>}
                     </td>
                 </tr>)}
             </tbody>
@@ -640,7 +755,7 @@ const UsersView = ({ user }) => {
         
         <div className="page-header">
             <h2>Manage Users</h2>
-            <div className="action-group" style={{display: 'flex', gap: '1rem'}}>
+            <div className="action-group">
                 <button className="btn btn-secondary" onClick={() => setIsInvitationModalOpen(true)}>Generate Invitation</button>
                 <button className="btn btn-primary" onClick={handleAddClick}>Add User Manually</button>
             </div>
@@ -892,7 +1007,7 @@ const HistoryView = ({ user }) => {
                     </div>
                 </form>
             </div>
-            {apiError && <p className="error-message">{apiError}</p>}
+            {apiError && <p className="error-message message-box">{apiError}</p>}
             <table>
                 <thead>
                     <tr>
