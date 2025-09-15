@@ -9,7 +9,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from dotenv import load_dotenv
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 
 import crud, models, schemas, auth
 from database import SessionLocal, engine, get_db
@@ -57,26 +57,26 @@ def verify_admin_password(payload: schemas.PasswordVerify, current_user: models.
 @app.get("/admin/users/", response_model=List[schemas.UserInDB], dependencies=[Depends(auth.require_admin)])
 def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)): return crud.get_users(db, skip, limit)
 
-@app.post("/admin/users/", response_model=schemas.UserInDB, dependencies=[Depends(auth.require_admin)])
-def create_user_manual(user: schemas.UserCreate, db: Session = Depends(get_db)):
+@app.post("/admin/users/", response_model=schemas.UserInDB)
+def create_user_manual(user: schemas.UserCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
     if crud.get_user_by_email(db, user.email) or crud.get_user_by_username(db, user.user_name): raise HTTPException(status.HTTP_400_BAD_REQUEST, "Email or username already registered.")
-    return crud.create_user(db=db, user=user)
+    return crud.create_user(db=db, user=user, current_user=current_user)
 
-@app.put("/admin/users/{user_id}", response_model=schemas.UserInDB, dependencies=[Depends(auth.require_admin)])
-def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Depends(get_db)):
-    db_user = crud.update_user(db, user_id, user_update)
+@app.put("/admin/users/{user_id}", response_model=schemas.UserInDB)
+def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
+    db_user = crud.update_user(db, user_id, user_update, current_user)
     if not db_user: raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
     return db_user
 
-@app.delete("/admin/users/{user_id}", response_model=schemas.UserInDB, dependencies=[Depends(auth.require_admin)])
-def delete_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = crud.delete_user(db, user_id)
+@app.delete("/admin/users/{user_id}", response_model=schemas.UserInDB)
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
+    db_user = crud.delete_user(db, user_id, current_user)
     if not db_user: raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
     return db_user
 
-@app.post("/admin/users/{user_id}/approve", response_model=schemas.UserInDB, dependencies=[Depends(auth.require_admin)])
-def approve_user(user_id: int, approval_data: schemas.UserApprove, db: Session = Depends(get_db)):
-    db_user = crud.approve_user(db, user_id, role=approval_data.role)
+@app.post("/admin/users/{user_id}/approve", response_model=schemas.UserInDB)
+def approve_user(user_id: int, approval_data: schemas.UserApprove, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
+    db_user = crud.approve_user(db, user_id, role=approval_data.role, current_user=current_user)
     if not db_user: raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
     return db_user
 
@@ -115,14 +115,14 @@ def create_patient(patient: schemas.PatientCreate, db: Session = Depends(get_db)
     return crud.create_patient(db, patient, user_id=current_user.id)
 
 @app.put("/patients/{patient_id}", response_model=schemas.Patient, dependencies=[Depends(auth.require_modify_access)])
-def update_patient(patient_id: int, patient_update: schemas.PatientUpdate, db: Session = Depends(get_db)):
-    db_patient = crud.update_patient(db, patient_id, patient_update)
+def update_patient(patient_id: int, patient_update: schemas.PatientUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_user)):
+    db_patient = crud.update_patient(db, patient_id, patient_update, current_user)
     if not db_patient: raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
     return db_patient
 
-@app.delete("/patients/{patient_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(auth.require_admin)])
-def delete_patient(patient_id: int, db: Session = Depends(get_db)):
-    db_patient = crud.delete_patient(db, patient_id)
+@app.delete("/patients/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_patient(patient_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
+    db_patient = crud.delete_patient(db, patient_id, current_user)
     if not db_patient:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
     return None
@@ -139,17 +139,17 @@ def sync_patient_anex_records(patient_id: int, records: List[schemas.AnexRecordU
 def get_finances(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)): return crud.get_finances(db, skip, limit)
 
 @app.post("/finances/", response_model=schemas.FinanceInDB, dependencies=[Depends(auth.require_modify_access)])
-def create_finance(finance: schemas.FinanceCreate, db: Session = Depends(get_db)): return crud.create_finance(db, finance)
+def create_finance(finance: schemas.FinanceCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_user)): return crud.create_finance(db, finance, current_user)
 
 @app.put("/finances/{finance_id}", response_model=schemas.FinanceInDB, dependencies=[Depends(auth.require_modify_access)])
-def update_finance(finance_id: int, finance_update: schemas.FinanceUpdate, db: Session = Depends(get_db)):
-    db_finance = crud.update_finance(db, finance_id, finance_update)
+def update_finance(finance_id: int, finance_update: schemas.FinanceUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_user)):
+    db_finance = crud.update_finance(db, finance_id, finance_update, current_user)
     if not db_finance: raise HTTPException(status.HTTP_404_NOT_FOUND, "Finance record not found")
     return db_finance
 
 @app.delete("/finances/{finance_id}", response_model=schemas.FinanceInDB, dependencies=[Depends(auth.require_admin)])
-def delete_finance(finance_id: int, db: Session = Depends(get_db)):
-    db_finance = crud.delete_finance(db, finance_id)
+def delete_finance(finance_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
+    db_finance = crud.delete_finance(db, finance_id, current_user)
     if not db_finance: raise HTTPException(status.HTTP_404_NOT_FOUND, "Finance record not found")
     return db_finance
 
@@ -158,16 +158,29 @@ def delete_finance(finance_id: int, db: Session = Depends(get_db)):
 def get_services(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)): return crud.get_services(db, skip, limit)
 
 @app.post("/services/", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_modify_access)])
-def create_service(service: schemas.ServiceCreate, db: Session = Depends(get_db)): return crud.create_service(db, service)
+def create_service(service: schemas.ServiceCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_user)): return crud.create_service(db, service, current_user)
 
 @app.put("/services/{service_id}", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_modify_access)])
-def update_service(service_id: int, service_update: schemas.ServiceUpdate, db: Session = Depends(get_db)):
-    db_service = crud.update_service(db, service_id, service_update)
+def update_service(service_id: int, service_update: schemas.ServiceUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_user)):
+    db_service = crud.update_service(db, service_id, service_update, current_user)
     if not db_service: raise HTTPException(status.HTTP_404_NOT_FOUND, "Service record not found")
     return db_service
 
 @app.delete("/services/{service_id}", response_model=schemas.ServiceInDB, dependencies=[Depends(auth.require_admin)])
-def delete_service(service_id: int, db: Session = Depends(get_db)):
-    db_service = crud.delete_service(db, service_id)
+def delete_service(service_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
+    db_service = crud.delete_service(db, service_id, current_user)
     if not db_service: raise HTTPException(status.HTTP_404_NOT_FOUND, "Service record not found")
     return db_service
+
+# --- History of Changes Route ---
+@app.get("/history/", response_model=List[schemas.HistoryLog], dependencies=[Depends(auth.get_current_active_user)])
+def get_history(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    author: Optional[str] = None,
+    date: Optional[date] = None,
+    patient: Optional[str] = None
+):
+    filters = {"author": author, "date": date, "patient": patient}
+    return crud.get_history_logs(db, skip=skip, limit=limit, filters=filters)

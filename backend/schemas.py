@@ -134,9 +134,34 @@ class ServiceInDB(ServiceBase):
     id: int
     class Config: from_attributes = True
 
+# --- History Log Schemas ---
+class UserForHistory(BaseModel):
+    id: int
+    user_name: str
+    class Config: from_attributes = True
+
+class PatientForHistory(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    personal_number: str
+    class Config: from_attributes = True
+
+class HistoryLog(BaseModel):
+    id: int
+    timestamp: datetime
+    action: str
+    entity_type: str
+    entity_id: int
+    changes: dict
+    user: UserForHistory
+    patient: Optional[PatientForHistory] = None
+    class Config: from_attributes = True
+
 # --- Misc Schemas ---
 class PasswordVerify(BaseModel):
     password: str
 
 # Update forward references
 Patient.model_rebuild()
+HistoryLog.model_rebuild()

@@ -52,6 +52,9 @@ const styles = `
   .filter-item label { font-size: 0.875rem; margin-bottom: 0.4rem; color: #586069; }
   .filter-item input { padding: 0.6rem; font-size: 0.9rem; }
   .filter-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem; }
+  .change-detail ul { margin: 0; padding-left: 1.2rem; } .change-detail li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+  .change-before { color: #c93a40; background-color: #fde8e8; padding: 0.1em 0.4em; border-radius: 4px; font-family: monospace;}
+  .change-after { color: #2e7d32; background-color: #e7f4e4; padding: 0.1em 0.4em; border-radius: 4px; font-family: monospace; }
 `;
 
 // --- API Client & Helper ---
@@ -799,6 +802,131 @@ const ServicesView = ({ user }) => {
     </div>);
 };
 
+const ChangesDetail = ({ action, changes }) => {
+    const renderValue = (value) => {
+        if (value === null) return <span className="change-before">null</span>;
+        if (typeof value === 'boolean') return value ? <span className="change-after">true</span> : <span className="change-before">false</span>;
+        return `"${value}"`;
+    };
+
+    if (action === 'CREATE' || action === 'DELETE') {
+        return (
+            <div className="change-detail">
+                <ul>
+                    {Object.entries(changes).map(([key, value]) => (
+                        <li key={key}><strong>{key}:</strong> {renderValue(value)}</li>
+                    ))}
+                </ul>
+            </div>
+        );
+    }
+    if (action === 'UPDATE') {
+        return (
+             <div className="change-detail">
+                 <ul>
+                    {Object.entries(changes).map(([key, value]) => (
+                        <li key={key}>
+                            <strong>{key}:</strong> 
+                            <span className="change-before">{renderValue(value.before)}</span>
+                             {' → '}
+                            <span className="change-after">{renderValue(value.after)}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )
+    }
+    return <pre>{JSON.stringify(changes, null, 2)}</pre>;
+};
+
+const HistoryView = ({ user }) => {
+    const initialFilters = { author: '', date: '', patient: '' };
+    const [logs, setLogs] = useState([]);
+    const [filters, setFilters] = useState(initialFilters);
+    const [apiError, setApiError] = useState('');
+
+    const fetchHistory = useCallback(async (currentFilters) => {
+        try {
+            setApiError('');
+            const activeFilters = Object.fromEntries(Object.entries(currentFilters).filter(([_, v]) => v));
+            const response = await apiClient.get('/history/', { params: activeFilters });
+            setLogs(response.data);
+        } catch (e) {
+            console.error("Failed to fetch history logs:", e);
+            setApiError("Failed to load history logs. Please try again later.");
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchHistory(filters);
+    }, [fetchHistory]);
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        fetchHistory(filters);
+    };
+
+    const handleClearSearch = () => {
+        setFilters(initialFilters);
+        fetchHistory(initialFilters);
+    };
+
+    return (
+        <div>
+            <div className="page-header"><h2>History of Changes</h2></div>
+            <div className="filter-container">
+                <form onSubmit={handleSearch}>
+                    <div className="filter-grid">
+                        <div className="filter-item"><label>Author (username)</label><input type="text" name="author" value={filters.author} onChange={handleFilterChange} /></div>
+                        <div className="filter-item"><label>Date</label><input type="date" name="date" value={filters.date} onChange={handleFilterChange} /></div>
+                        <div className="filter-item"><label>Patient (name or personal number)</label><input type="text" name="patient" value={filters.patient} onChange={handleFilterChange} /></div>
+                    </div>
+                    <div className="filter-actions">
+                        <button type="button" className="btn btn-secondary" onClick={handleClearSearch}>Clear</button>
+                        <button type="submit" className="btn btn-primary">Search</button>
+                    </div>
+                </form>
+            </div>
+            {apiError && <p className="error-message">{apiError}</p>}
+            <table>
+                <thead>
+                    <tr>
+                        <th style={{width: '180px'}}>Date</th>
+                        <th>Author</th>
+                        <th>Action</th>
+                        <th>Entity</th>
+                        <th>Patient Context</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {logs.map(log => (
+                        <tr key={log.id}>
+                            <td>{new Date(log.timestamp).toLocaleString()}</td>
+                            <td>{log.user.user_name}</td>
+                            <td>{log.action}</td>
+                            <td>{log.entity_type} #{log.entity_id}</td>
+                            <td>
+                                {log.patient 
+                                    ? `${log.patient.first_name} ${log.patient.last_name} (#${log.patient.personal_number})` 
+                                    : <span style={{color: '#888'}}>N/A</span>}
+                            </td>
+                            <td>
+                                <ChangesDetail action={log.action} changes={log.changes} />
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
 // --- Main Components ---
 const Dashboard = ({ user, handleLogout }) => {
     const [activeView, setActiveView] = useState('patients');
@@ -812,11 +940,13 @@ const Dashboard = ({ user, handleLogout }) => {
                 {user.role === 'admin' && <NavTab view="users" label="Users" />}
                 <NavTab view="finance" label="Finance" />
                 <NavTab view="services" label="Services" />
+                <NavTab view="history" label="History of Changes" />
             </nav>
             {activeView === 'patients' && <PatientsView user={user} />}
             {activeView === 'users' && user.role === 'admin' && <UsersView user={user} />}
             {activeView === 'finance' && <FinanceView user={user} />}
             {activeView === 'services' && <ServicesView user={user} />}
+            {activeView === 'history' && <HistoryView user={user} />}
         </div> 
     );
 };

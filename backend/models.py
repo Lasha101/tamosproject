@@ -1,10 +1,10 @@
 from sqlalchemy import (
     Boolean, Column, Integer, Float, String, 
-    Date, ForeignKey, Table, DateTime
+    Date, ForeignKey, Table, DateTime, JSON
 )
 from sqlalchemy.orm import relationship
 from database import Base
-
+from datetime import datetime, timezone
 
 
 # Links Users (staff) and Patients for general assignment
@@ -38,6 +38,9 @@ class User(Base):
     
     # Many-to-Many relationship to Specialisation
     specialisations = relationship("Specialisation", secondary=user_specialisation_association, back_populates="users")
+
+    # One-to-Many relationship for tracking changes made by this user
+    history_logs = relationship("HistoryLog", back_populates="user")
 
 
 class Specialisation(Base):
@@ -115,3 +118,18 @@ class Invitation(Base):
     token = Column(String, unique=True, index=True, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     is_used = Column(Boolean, default=False)
+
+class HistoryLog(Base):
+    """Represents a record of a change made in the system."""
+    __tablename__ = "history_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    action = Column(String, index=True) # e.g., CREATE, UPDATE, DELETE
+    entity_type = Column(String, index=True) # e.g., Patient, User
+    entity_id = Column(Integer)
+    patient_id = Column(Integer, ForeignKey('patients.id'), nullable=True, index=True)
+    changes = Column(JSON) # Stores a dict of changes, e.g., {"field": {"before": "...", "after": "..."}}
+
+    user = relationship("User", back_populates="history_logs")
+    patient = relationship("Patient")
