@@ -9,7 +9,7 @@ const REGISTRATION_BASE_URL = 'http://localhost:5173/register';
 
 // --- Styles ---
 const styles = `
-  :root { --primary-color: #4a90e2; --secondary-color: #f5f7fa; --text-color: #333; --border-color: #e1e4e8; --danger-color: #d9534f; --success-color: #5cb85c; --pending-color: #f0ad4e; }
+  :root { --primary-color: #4a90e2; --secondary-color: #f5f7fa; --text-color: #333; --border-color: #e1e4e8; --danger-color: #d9534f; --success-color: #5cb85c; --pending-color: #f0ad4e; --blocked-color: #777; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 0; background-color: var(--secondary-color); color: var(--text-color); }
   .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
   .form-container { max-width: 450px; margin: 5rem auto; padding: 2.5rem; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
@@ -27,13 +27,14 @@ const styles = `
   .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.875rem; }
   .btn-secondary { background-color: #6c757d; color: white; }
   .btn-secondary:hover { background-color: #5a6268; }
+  .btn-warning { background-color: var(--pending-color); color: white; }
   table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
   th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
   .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
   .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
   .page-header .action-group { display: flex; gap: 1rem; }
   .status-badge { padding: 0.25em 0.6em; font-size: 0.75rem; font-weight: 700; border-radius: 2em; text-transform: uppercase; }
-  .status-pending { background-color: var(--pending-color); color: white; } .status-approved { background-color: var(--success-color); color: white; }
+  .status-pending { background-color: var(--pending-color); color: white; } .status-approved { background-color: var(--success-color); color: white; } .status-blocked { background-color: var(--blocked-color); color: white; }
   .message-box { margin-top: 1rem; text-align:center; padding: 0.8rem; border-radius: 4px; }
   .error-message { color: var(--danger-color); background-color: rgba(217, 83, 79, 0.1); }
   .success-message { color: var(--success-color); background-color: rgba(92, 184, 92, 0.1); }
@@ -206,8 +207,8 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
 
     const handleApplyRowChanges = (index) => {
         const record = records[index];
-        if (!record.doctor_id || !record.service_id) {
-            alert("Doctor and Research fields are required.");
+        if (!record.service_id) {
+            alert("Research field is required.");
             return;
         }
         setEditingRowIndex(null);
@@ -223,6 +224,7 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
     };
 
     const findDoctorNameById = (id) => {
+        if (id === null) return <span style={{color: '#888'}}>N/A</span>
         const doctor = doctors.find(d => d.id === id);
         return doctor ? `${doctor.first_name} ${doctor.last_name}` : 'Not Selected';
     };
@@ -254,7 +256,7 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
                                     {editingRowIndex === index ? (
                                         <>
                                             <td>
-                                                <select value={rec.doctor_id} onChange={e => handleRecordChange(index, 'doctor_id', parseInt(e.target.value))} required>
+                                                <select value={rec.doctor_id || ''} onChange={e => handleRecordChange(index, 'doctor_id', e.target.value ? parseInt(e.target.value) : null)}>
                                                     <option value="">Select Doctor</option>
                                                     {doctors.map(d => <option key={d.id} value={d.id}>{d.first_name} {d.last_name}</option>)}
                                                 </select>
@@ -448,22 +450,22 @@ const DeletePatientModal = ({ onClose, onSuccess }) => {
                 );
             case 2:
                 return (
-                     <form onSubmit={(e) => { e.preventDefault(); setMessage({type:'',text:''}); setStep(3); }}>
-                        <div className="patient-info-box">
-                            <p>You are about to delete:</p>
-                            <h3>{patientInfo.first_name} {patientInfo.last_name}</h3>
-                            <p>(Personal N: {patientInfo.personal_number})</p>
-                        </div>
-                        <p>Enter your admin password to continue.</p>
-                         <div className="form-group">
-                             <label>Password</label>
-                             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoFocus/>
-                         </div>
-                         <div className="modal-footer">
-                             <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>Back</button>
-                             <button type="submit" className="btn btn-danger">Continue</button>
-                         </div>
-                     </form>
+                       <form onSubmit={(e) => { e.preventDefault(); setMessage({type:'',text:''}); setStep(3); }}>
+                           <div className="patient-info-box">
+                               <p>You are about to delete:</p>
+                               <h3>{patientInfo.first_name} {patientInfo.last_name}</h3>
+                               <p>(Personal N: {patientInfo.personal_number})</p>
+                           </div>
+                           <p>Enter your admin password to continue.</p>
+                            <div className="form-group">
+                                 <label>Password</label>
+                                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoFocus/>
+                            </div>
+                            <div className="modal-footer">
+                                 <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>Back</button>
+                                 <button type="submit" className="btn btn-danger">Continue</button>
+                            </div>
+                       </form>
                 );
             case 3:
                 return (
@@ -477,7 +479,7 @@ const DeletePatientModal = ({ onClose, onSuccess }) => {
                              <button type="button" className="btn btn-success" style={{flexGrow: 1}} onClick={handleFinalDelete} disabled={isLoading}>
                                  {isLoading ? 'Deleting...' : 'OK'}
                              </button>
-                         </div>
+                        </div>
                     </div>
                 );
             default: return null;
@@ -682,6 +684,7 @@ const PatientsView = ({ user }) => {
     </div>);
 };
 
+// --- MODIFIED: Entire UsersView component updated ---
 const UsersView = ({ user }) => {
     const [users, setUsers] = useState([]);
     const [editingUser, setEditingUser] = useState(null);
@@ -707,7 +710,7 @@ const UsersView = ({ user }) => {
     };
 
     const handleDelete = async (userId) => {
-        if (window.confirm("Are you sure you want to delete this user?")) {
+        if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
             try {
                 await apiClient.delete(`/admin/users/${userId}`);
                 fetchUsers();
@@ -726,6 +729,18 @@ const UsersView = ({ user }) => {
             alert(error.response?.data?.detail || "Failed to approve user.");
         }
     };
+
+    const handleBlock = async (userId, is_blocked) => {
+        const action = is_blocked ? "block" : "unblock";
+        if (window.confirm(`Are you sure you want to ${action} this user?`)) {
+            try {
+                await apiClient.post(`/admin/users/${userId}/block`, { is_blocked });
+                fetchUsers();
+            } catch(error) {
+                alert(error.response?.data?.detail || `Failed to ${action} user.`);
+            }
+        }
+    };
     
     const handleFormChange = (e) => {
         setEditingUser(prev => ({...prev, [e.target.name]: e.target.value}));
@@ -740,6 +755,16 @@ const UsersView = ({ user }) => {
         setEditingUser(user);
         setApiError('');
     }
+    
+    const getStatus = (item) => {
+        if (item.is_blocked) {
+            return <span className="status-badge status-blocked">Blocked</span>;
+        }
+        if (item.is_approved) {
+            return <span className="status-badge status-approved">Approved</span>;
+        }
+        return <span className="status-badge status-pending">Pending</span>;
+    };
 
     return (<div>
         {editingUser && <FormModal 
@@ -764,7 +789,7 @@ const UsersView = ({ user }) => {
             {users.map(item => (<tr key={item.id}>
                 <td>{item.first_name} {item.last_name}</td><td>{item.email}</td><td>{item.user_name}</td>
                 <td>{item.role}</td>
-                <td><span className={`status-badge ${item.is_approved ? 'status-approved' : 'status-pending'}`}>{item.is_approved ? 'Approved' : 'Pending'}</span></td>
+                <td>{getStatus(item)}</td>
                 <td className="actions">
                     {!item.is_approved ? (
                         <>
@@ -781,6 +806,11 @@ const UsersView = ({ user }) => {
                     ) : (
                         <>
                             <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
+                            {item.is_blocked ? (
+                                <button className="btn btn-success btn-sm" onClick={() => handleBlock(item.id, false)}>Unblock</button>
+                            ) : (
+                                <button className="btn btn-warning btn-sm" onClick={() => handleBlock(item.id, true)}>Block</button>
+                            )}
                             <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>
                         </>
                     )}
@@ -921,6 +951,7 @@ const ChangesDetail = ({ action, changes }) => {
     const renderValue = (value) => {
         if (value === null) return <span className="change-before">null</span>;
         if (typeof value === 'boolean') return value ? <span className="change-after">true</span> : <span className="change-before">false</span>;
+        if (typeof value === 'object' && value !== null) return JSON.stringify(value);
         return `"${value}"`;
     };
 
@@ -935,7 +966,7 @@ const ChangesDetail = ({ action, changes }) => {
             </div>
         );
     }
-    if (action === 'UPDATE') {
+    if (action === 'UPDATE' || action === 'BLOCK' || action === 'UNBLOCK') {
         return (
              <div className="change-detail">
                  <ul>
@@ -1023,7 +1054,7 @@ const HistoryView = ({ user }) => {
                     {logs.map(log => (
                         <tr key={log.id}>
                             <td>{new Date(log.timestamp).toLocaleString()}</td>
-                            <td>{log.user.user_name}</td>
+                            <td>{log.user ? log.user.user_name : <span style={{color: '#888'}}>Deleted User</span>}</td>
                             <td>{log.action}</td>
                             <td>{log.entity_type} #{log.entity_id}</td>
                             <td>
@@ -1133,3 +1164,4 @@ function App() {
 }
 
 export default App;
+

@@ -111,6 +111,20 @@ def approve_user(db: Session, user_id: int, role: str, current_user: models.User
         db.refresh(db_user)
     return db_user
 
+# --- MODIFIED: Added block_user function ---
+def block_user(db: Session, user_id: int, is_blocked: bool, current_user: models.User):
+    db_user = get_user(db, user_id)
+    if db_user:
+        changes = {
+            "is_blocked": {"before": db_user.is_blocked, "after": is_blocked}
+        }
+        db_user.is_blocked = is_blocked
+        action = "BLOCK" if is_blocked else "UNBLOCK"
+        create_history_log(db, current_user.id, action, db_user, changes)
+        db.commit()
+        db.refresh(db_user)
+    return db_user
+
 # --- Invitation Functions ---
 def create_invitation(db: Session, email: str):
     db_invitation = models.Invitation(email=email, token=secrets.token_urlsafe(32), expires_at=datetime.now(timezone.utc) + timedelta(hours=24))
@@ -341,3 +355,4 @@ def get_history_logs(db: Session, skip: int, limit: int, filters: Dict[str, Opti
             )
 
     return query.order_by(models.HistoryLog.timestamp.desc()).offset(skip).limit(limit).all()
+

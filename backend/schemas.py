@@ -62,15 +62,22 @@ class UserUpdate(BaseModel):
 class UserApprove(BaseModel):
     role: str
 
+# --- MODIFIED: Added UserBlock schema ---
+class UserBlock(BaseModel):
+    is_blocked: bool
+
 class UserInDB(UserBase):
     id: int
     role: str
     is_approved: bool
+    # --- MODIFIED: Added is_blocked to response ---
+    is_blocked: bool
     class Config: from_attributes = True
 
 # --- Anex Schemas ---
 class AnexRecordBase(BaseModel):
-    doctor_id: int
+    # --- MODIFIED: doctor_id is now optional to reflect model changes ---
+    doctor_id: Optional[int] = None
     service_id: int
     finance_id: Optional[int] = None
     payable_amount: float = 0.0
@@ -154,7 +161,8 @@ class HistoryLog(BaseModel):
     entity_type: str
     entity_id: int
     changes: dict
-    user: UserForHistory
+    # --- MODIFIED: user is now optional to reflect that it can be NULL ---
+    user: Optional[UserForHistory] = None
     patient: Optional[PatientForHistory] = None
     class Config: from_attributes = True
 
@@ -169,3 +177,4 @@ class AdminPatientDelete(BaseModel):
 # Update forward references
 Patient.model_rebuild()
 HistoryLog.model_rebuild()
+

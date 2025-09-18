@@ -43,6 +43,9 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     if not verify_password(password, user.hashed_password):
         return False
+    # --- MODIFIED: Check if the user is blocked ---
+    if user.is_blocked:
+        return "BLOCKED"
     # IMPORTANT: Check if the user's account has been approved by an admin
     if not user.is_approved:
         return "NOT_APPROVED"
@@ -69,8 +72,9 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 def get_current_active_user(current_user: models.User = Depends(get_current_user)):
-    # This is a placeholder for future logic, e.g., checking if a user is banned.
-    # For now, it just ensures the user exists.
+    # --- MODIFIED: Added check for blocked status on every API call ---
+    if current_user.is_blocked:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your account is blocked.")
     return current_user
 
 # --- Dependency for Admin-Only Routes ---
@@ -90,3 +94,4 @@ def require_modify_access(current_user: models.User = Depends(get_current_active
             detail="Insufficient privileges for this action.",
         )
     return current_user
+

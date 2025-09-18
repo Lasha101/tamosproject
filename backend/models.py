@@ -32,6 +32,8 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, index=True, nullable=False) # e.g., "doctor", "staff"
     is_approved = Column(Boolean, default=False)
+    # --- MODIFIED: Added is_blocked column ---
+    is_blocked = Column(Boolean, default=False, nullable=False)
     
     # Many-to-Many relationship for general staff assignment to a Patient
     patients_assigned = relationship("Patient", secondary=user_patient_association, back_populates="staff_assigned")
@@ -79,7 +81,8 @@ class AnexRecord(Base):
     __tablename__ = "anex_records"
     id = Column(Integer, primary_key=True, index=True)
     patient_id = Column(Integer, ForeignKey('patients.id'), nullable=False)
-    doctor_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    # --- MODIFIED: Added ondelete='SET NULL' to preserve records if a doctor is deleted ---
+    doctor_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     service_id = Column(Integer, ForeignKey('services.id'), nullable=False)
     finance_id = Column(Integer, ForeignKey('finances.id'), nullable=True) # Nullable for self-funding
     payable_amount = Column(Float, default=0.0)
@@ -124,7 +127,8 @@ class HistoryLog(Base):
     __tablename__ = "history_logs"
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    # --- MODIFIED: Added ondelete='SET NULL' to preserve history logs ---
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     action = Column(String, index=True) # e.g., CREATE, UPDATE, DELETE
     entity_type = Column(String, index=True) # e.g., Patient, User
     entity_id = Column(Integer)

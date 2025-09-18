@@ -39,6 +39,8 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http
 @limiter.limit("5/minute")
 def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = auth.authenticate_user(db, form_data.username, form_data.password)
+    # --- MODIFIED: Handle new authentication statuses ---
+    if user == "BLOCKED": raise HTTPException(status.HTTP_403_FORBIDDEN, "This account has been blocked.")
     if user == "NOT_APPROVED": raise HTTPException(status.HTTP_403_FORBIDDEN, "Account not approved by admin.")
     if not user: raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect username or password")
     return {"access_token": auth.create_access_token({"sub": user.user_name, "role": user.role}), "token_type": "bearer"}
@@ -78,6 +80,14 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_user: model
 def approve_user(user_id: int, approval_data: schemas.UserApprove, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
     db_user = crud.approve_user(db, user_id, role=approval_data.role, current_user=current_user)
     if not db_user: raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+    return db_user
+
+# --- MODIFIED: Added block/unblock endpoint ---
+@app.post("/admin/users/{user_id}/block", response_model=schemas.UserInDB)
+def block_user_endpoint(user_id: int, block_data: schemas.UserBlock, db: Session = Depends(get_db), current_user: models.User = Depends(auth.require_admin)):
+    db_user = crud.block_user(db, user_id, is_blocked=block_data.is_blocked, current_user=current_user)
+    if not db_user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
     return db_user
 
 @app.post("/admin/invitations/", response_model=schemas.Invitation, dependencies=[Depends(auth.require_admin)])
@@ -205,3 +215,4 @@ def get_history(
 ):
     filters = {"author": author, "date": date, "patient": patient}
     return crud.get_history_logs(db, skip=skip, limit=limit, filters=filters)
+
