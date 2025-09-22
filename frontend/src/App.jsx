@@ -80,8 +80,8 @@ const FormModal = ({ title, children, onClose, onSubmit, apiError }) => (
                 {children}
                 {apiError && <p className="error-message message-box">{apiError}</p>}
                 <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-                    <button type="submit" className="btn btn-primary">Save</button>
+                    <button type="button" className="btn btn-secondary" onClick={onClose}>უკან</button>
+                    <button type="submit" className="btn btn-primary">შენახვა</button>
                 </div>
             </form>
         </div>
@@ -91,41 +91,41 @@ const FormModal = ({ title, children, onClose, onSubmit, apiError }) => (
 
 // --- Form Field Components ---
 const UserFormFields = ({ formData, handleChange }) => (<>
-    <div className="form-group"><label>First Name</label><input type="text" name="first_name" value={formData.first_name || ''} onChange={handleChange} required /></div>
-    <div className="form-group"><label>Last Name</label><input type="text" name="last_name" value={formData.last_name || ''} onChange={handleChange} required /></div>
-    <div className="form-group"><label>Email</label><input type="email" name="email" value={formData.email || ''} onChange={handleChange} required /></div>
-    <div className="form-group"><label>Username</label><input type="text" name="user_name" value={formData.user_name || ''} onChange={handleChange} required /></div>
-    <div className="form-group"><label>Password</label><input type="password" name="password" placeholder={formData.id ? "Leave blank to keep current" : ""} onChange={handleChange} required={!formData.id} /></div>
+    <div className="form-group"><label>სახელი</label><input type="text" name="first_name" value={formData.first_name || ''} onChange={handleChange} required /></div>
+    <div className="form-group"><label>გვარი</label><input type="text" name="last_name" value={formData.last_name || ''} onChange={handleChange} required /></div>
+    <div className="form-group"><label>ელ. ფოსტა</label><input type="email" name="email" value={formData.email || ''} onChange={handleChange} required /></div>
+    <div className="form-group"><label>მომხმარებელი</label><input type="text" name="user_name" value={formData.user_name || ''} onChange={handleChange} required /></div>
+    <div className="form-group"><label>პაროლი</label><input type="password" name="password" placeholder={formData.id ? "Leave blank to keep current" : ""} onChange={handleChange} required={!formData.id} /></div>
     <div className="form-group">
-        <label>Role</label>
+        <label>თანამდებობა</label>
         <select name="role" value={formData.role || 'staff'} onChange={handleChange}>
-            <option value="staff">Staff</option>
-            <option value="doctor">Doctor</option>
-            <option value="admin">Admin</option>
+            <option value="staff">თანამშრომელი</option>
+            <option value="doctor">ექიმი</option>
+            <option value="admin">ადმინისტრატორი</option>
         </select>
     </div>
 </>);
 
 const FinanceFormFields = ({ formData, handleChange }) => (<>
-    <div className="form-group"><label>Funder Name</label><input type="text" name="funder_name" value={formData.funder_name || ''} onChange={handleChange} required /></div>
-    <div className="form-group"><label>Email</label><input type="email" name="email" value={formData.email || ''} onChange={handleChange} required /></div>
-    <div className="form-group"><label>Phone</label><input type="text" name="phone_number" value={formData.phone_number || ''} onChange={handleChange} /></div>
+    <div className="form-group"><label>დამფინანსებელი</label><input type="text" name="funder_name" value={formData.funder_name || ''} onChange={handleChange} required /></div>
+    <div className="form-group"><label>ელ. ფოსტა</label><input type="email" name="email" value={formData.email || ''} onChange={handleChange} required /></div>
+    <div className="form-group"><label>ტელეფონი</label><input type="text" name="phone_number" value={formData.phone_number || ''} onChange={handleChange} /></div>
 </>);
 
 const ServiceFormFields = ({ formData, handleChange }) => (<>
-    <div className="form-group"><label>Service Number</label><input type="text" name="service_number" value={formData.service_number || ''} onChange={handleChange} required /></div>
-    <div className="form-group"><label>Research Name</label><input type="text" name="research_name" value={formData.research_name || ''} onChange={handleChange} required /></div>
-    <div className="form-group"><label>Laboratory Name</label><input type="text" name="laboratory_name" value={formData.laboratory_name || ''} onChange={handleChange} required /></div>
-    <div className="form-group"><label>Deadline</label><input type="date" name="deadline" value={formData.deadline || ''} onChange={handleChange} /></div>
+    <div className="form-group"><label>მომსახურების დასახელება</label><input type="text" name="service_number" value={formData.service_number || ''} onChange={handleChange} required /></div>
+    <div className="form-group"><label>კვლევა</label><input type="text" name="research_name" value={formData.research_name || ''} onChange={handleChange} required /></div>
+    <div className="form-group"><label>ლაბორატორია</label><input type="text" name="laboratory_name" value={formData.laboratory_name || ''} onChange={handleChange} required /></div>
+    <div className="form-group"><label>ვადა</label><input type="date" name="deadline" value={formData.deadline || ''} onChange={handleChange} /></div>
 </>);
 
 const PatientFormFields = ({ formData, handleChange }) => (<>
-    <div className="form-group"><label>First Name</label><input type="text" name="first_name" value={formData.first_name || ''} onChange={e => handleChange(e.target.name, e.target.value)} required /></div>
-    <div className="form-group"><label>Last Name</label><input type="text" name="last_name" value={formData.last_name || ''} onChange={e => handleChange(e.target.name, e.target.value)} required /></div>
-    <div className="form-group"><label>Birth Date</label><input type="date" name="birth_date" value={formData.birth_date || ''} onChange={e => handleChange(e.target.name, e.target.value)} required /></div>
-    <div className="form-group"><label>Personal Number</label><input type="text" name="personal_number" value={formData.personal_number || ''} onChange={e => handleChange(e.target.name, e.target.value)} required /></div>
-    <div className="form-group"><label>Nationality</label><input type="text" name="nationality" value={formData.nationality || ''} onChange={e => handleChange(e.target.name, e.target.value)} /></div>
-    <div className="form-group"><label>Address</label><input type="text" name="address" value={formData.address || ''} onChange={e => handleChange(e.target.name, e.target.value)} /></div>
+    <div className="form-group"><label>სახელი</label><input type="text" name="first_name" value={formData.first_name || ''} onChange={e => handleChange(e.target.name, e.target.value)} required /></div>
+    <div className="form-group"><label>გვარი</label><input type="text" name="last_name" value={formData.last_name || ''} onChange={e => handleChange(e.target.name, e.target.value)} required /></div>
+    <div className="form-group"><label>დაბადების თარიღი</label><input type="date" name="birth_date" value={formData.birth_date || ''} onChange={e => handleChange(e.target.name, e.target.value)} required /></div>
+    <div className="form-group"><label>პირადი ნომერი</label><input type="text" name="personal_number" value={formData.personal_number || ''} onChange={e => handleChange(e.target.name, e.target.value)} required /></div>
+    <div className="form-group"><label>მოქალაქეობა</label><input type="text" name="nationality" value={formData.nationality || ''} onChange={e => handleChange(e.target.name, e.target.value)} /></div>
+    <div className="form-group"><label>მისამართი</label><input type="text" name="address" value={formData.address || ''} onChange={e => handleChange(e.target.name, e.target.value)} /></div>
 </>);
 
 // --- Reusable Modals ---
@@ -137,7 +137,7 @@ const InvitationModal = ({ onClose }) => {
 
     const handleGenerate = async () => {
         if (!email) {
-            setApiError("Email is required.");
+            setApiError("მიუთითე ელ. ფოსტა!");
             return;
         }
         setIsLoading(true);
@@ -147,7 +147,7 @@ const InvitationModal = ({ onClose }) => {
             const response = await apiClient.post('/admin/invitations/', { email });
             setInvitationLink(`${REGISTRATION_BASE_URL}?token=${response.data.token}`);
         } catch (error) {
-            setApiError(error.response?.data?.detail || "Failed to create invitation.");
+            setApiError(error.response?.data?.detail || "ვერ მოხერხდა მოწვევის შექმნა.");
         } finally {
             setIsLoading(false);
         }
@@ -156,21 +156,21 @@ const InvitationModal = ({ onClose }) => {
     return (
         <div className="modal-backdrop">
             <div className="modal-content" style={{maxWidth: '600px'}}>
-                <h2>Generate Invitation Link</h2>
+                <h2>შექმენი მოწვევის ბმული</h2>
                 <div className="form-group">
-                    <label>User's Email</label>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter email to invite" />
+                    <label>მომხმარებელის ელ. ფოსტა</label>
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="შეიყვანე ელ. ფოსტა მოსაწვევად" />
                 </div>
                 {apiError && <p className="error-message message-box">{apiError}</p>}
                 {invitationLink && (
                     <div className="invitation-link-container">
-                        <p>Share this link with the user:</p><code>{invitationLink}</code>
+                        <p>მიეცი ეს ბმული მომხმარებელს:</p><code>{invitationLink}</code>
                     </div>
                 )}
                 <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
+                    <button type="button" className="btn btn-secondary" onClick={onClose}>დახურვა</button>
                     <button type="button" className="btn btn-primary" onClick={handleGenerate} disabled={isLoading}>
-                        {isLoading ? 'Generating...' : 'Generate Link'}
+                        {isLoading ? 'მიმდინარეობს შექმნა...' : 'ბმულის შექმნა'}
                     </button>
                 </div>
             </div>
@@ -196,7 +196,7 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
     };
 
     const handleDeleteRecord = (index) => {
-        if (window.confirm("Are you sure you want to remove this record?")) {
+        if (window.confirm("ნამდვილად გინდა ამ ჩანაწერის წაშლა?")) {
             setRecords(records.filter((_, i) => i !== index));
         }
     };
@@ -208,7 +208,7 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
     const handleApplyRowChanges = (index) => {
         const record = records[index];
         if (!record.service_id) {
-            alert("Research field is required.");
+            alert("კვლევის მითითება აუცილებელია!");
             return;
         }
         setEditingRowIndex(null);
@@ -217,7 +217,7 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
     const handleSubmit = (e) => {
         e.preventDefault();
         if (editingRowIndex !== null) {
-            alert("Please apply changes to the currently editing row before saving.");
+            alert("შენახვამდე აუცილებელია მიმდინარე ცვლილების ასახვა.");
             return;
         }
         onSave(patient.id, records);
@@ -226,28 +226,28 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
     const findDoctorNameById = (id) => {
         if (id === null) return <span style={{color: '#888'}}>N/A</span>
         const doctor = doctors.find(d => d.id === id);
-        return doctor ? `${doctor.first_name} ${doctor.last_name}` : 'Not Selected';
+        return doctor ? `${doctor.first_name} ${doctor.last_name}` : 'არ არის არჩეული.';
     };
-    const findServiceNameById = (id) => services.find(s => s.id === id)?.research_name || 'Not Selected';
+    const findServiceNameById = (id) => services.find(s => s.id === id)?.research_name || 'არ არის არჩეული.';
     const findFunderNameById = (id) => {
         if (id === null) return 'Patient Self-Funded';
-        return finances.find(f => f.id === id)?.funder_name || 'Not Selected';
+        return finances.find(f => f.id === id)?.funder_name || 'არ არის არჩეული.';
     };
 
     return (
         <div className="modal-backdrop">
             <div className="modal-content">
-                <h2>Anex for {patient.first_name} {patient.last_name}</h2>
+                <h2>დანართი: {patient.first_name} {patient.last_name}</h2>
                 <form onSubmit={handleSubmit}>
                     <table className="anex-table">
                         <thead>
                             <tr>
-                                <th>Doctor</th>
-                                <th>Research</th>
-                                <th>Funder</th>
-                                <th style={{width: '130px'}}>Payable</th>
-                                <th style={{width: '130px'}}>Paid</th>
-                                <th style={{width: '180px'}}>Actions</th>
+                                <th>ექიმი</th>
+                                <th>კვლევა</th>
+                                <th>დამფინანსებელი</th>
+                                <th style={{width: '130px'}}>გადასახდელი</th>
+                                <th style={{width: '130px'}}>გადახდილი</th>
+                                <th style={{width: '180px'}}>მოქმედება</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -257,27 +257,27 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
                                         <>
                                             <td>
                                                 <select value={rec.doctor_id || ''} onChange={e => handleRecordChange(index, 'doctor_id', e.target.value ? parseInt(e.target.value) : null)}>
-                                                    <option value="">Select Doctor</option>
+                                                    <option value="">აირჩიე ექიმი</option>
                                                     {doctors.map(d => <option key={d.id} value={d.id}>{d.first_name} {d.last_name}</option>)}
                                                 </select>
                                             </td>
                                             <td>
                                                 <select value={rec.service_id} onChange={e => handleRecordChange(index, 'service_id', parseInt(e.target.value))} required>
-                                                    <option value="">Select Research</option>
+                                                    <option value="">აირჩიე კვლევა</option>
                                                     {services.map(s => <option key={s.id} value={s.id}>{s.research_name}</option>)}
                                                 </select>
                                             </td>
                                             <td>
                                                 <select value={rec.finance_id === null ? 'self' : rec.finance_id} onChange={e => handleRecordChange(index, 'finance_id', e.target.value === 'self' ? null : parseInt(e.target.value))}>
-                                                    <option value="self">Patient Self-Funded</option>
+                                                    <option value="self">თვითონ</option>
                                                     {finances.map(f => <option key={f.id} value={f.id}>{f.funder_name}</option>)}
                                                 </select>
                                             </td>
                                             <td><input className="amount-payable" type="number" step="0.01" value={rec.payable_amount} onChange={e => handleRecordChange(index, 'payable_amount', parseFloat(e.target.value) || 0)} /></td>
                                             <td><input className="amount-paid" type="number" step="0.01" value={rec.paid_amount} onChange={e => handleRecordChange(index, 'paid_amount', parseFloat(e.target.value) || 0)} /></td>
                                             <td className="actions">
-                                                <button type="button" className="btn btn-success btn-sm" onClick={() => handleApplyRowChanges(index)}>Apply</button>
-                                                {user && user.role === 'admin' && <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDeleteRecord(index)}>Delete</button>}
+                                                <button type="button" className="btn btn-success btn-sm" onClick={() => handleApplyRowChanges(index)}>ასახვა</button>
+                                                {user && user.role === 'admin' && <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDeleteRecord(index)}>წაშლა</button>}
                                             </td>
                                         </>
                                     ) : (
@@ -288,8 +288,8 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
                                             <td><span className="amount-payable">${(rec.payable_amount || 0).toFixed(2)}</span></td>
                                             <td><span className="amount-paid">${(rec.paid_amount || 0).toFixed(2)}</span></td>
                                             <td className="actions">
-                                                <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleEditClick(index)}>Edit</button>
-                                                {user && user.role === 'admin' && <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDeleteRecord(index)}>Delete</button>}
+                                                <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleEditClick(index)}>ჩასწორება</button>
+                                                {user && user.role === 'admin' && <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDeleteRecord(index)}>წაშლა</button>}
                                             </td>
                                         </>
                                     )}
@@ -297,11 +297,11 @@ const AnexModal = ({ user, patient, doctors, services, finances, onClose, onSave
                             ))}
                         </tbody>
                     </table>
-                    <button type="button" className="btn btn-secondary" style={{marginTop: '1rem'}} onClick={handleAddRecord} disabled={editingRowIndex !== null}>Add Record</button>
+                    <button type="button" className="btn btn-secondary" style={{marginTop: '1rem'}} onClick={handleAddRecord} disabled={editingRowIndex !== null}>ჩანაწერის დამატება</button>
                     {apiError && <p className="error-message message-box">{apiError}</p>}
                     <div className="modal-footer">
-                        <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-                        <button type="submit" className="btn btn-primary">Save Changes</button>
+                        <button type="button" className="btn btn-secondary" onClick={onClose}>უკან</button>
+                        <button type="submit" className="btn btn-primary">ცვლილებების შენახვა</button>
                     </div>
                 </form>
             </div>
@@ -328,7 +328,7 @@ const Login = ({ onLoginSuccess }) => {
       onLoginSuccess(token);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.detail || "An error occurred during login.");
+      setError(err.response?.data?.detail || "აუთენტიფიკაციის შეცდომა.");
     } finally {
       setIsLoading(false);
     }
@@ -336,12 +336,12 @@ const Login = ({ onLoginSuccess }) => {
 
   return (
     <div className="form-container">
-      <h1>Login</h1>
+      <h1>აუთენტიფიკაცია</h1>
       <form onSubmit={handleSubmit}>
-        <div className="form-group"><label>Username</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
-        <div className="form-group"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
+        <div className="form-group"><label>მომხმარებელი</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
+        <div className="form-group"><label>პაროლი</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
         {error && <p className="error-message message-box">{error}</p>}
-        <button type="submit" className="btn btn-primary" style={{width: '100%'}} disabled={isLoading}>{isLoading ? 'Logging in...' : 'Login'}</button>
+        <button type="submit" className="btn btn-primary" style={{width: '100%'}} disabled={isLoading}>{isLoading ? 'მიმდინარეობს აუთენტიფიკაცია...' : 'აუთენტიფიკაცია'}</button>
       </form>
     </div>
   );
@@ -359,15 +359,15 @@ const Registration = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!token) { setError("No registration token found in URL."); return; }
+        if (!token) { setError("სარეგისტრაციო ტოკენი ვერ იქნა ნაპოვნი."); return; }
         setIsLoading(true);
         setError('');
         setSuccess('');
         try {
             await apiClient.post(`/users/?token=${token}`, formData);
-            setSuccess("Registration successful! Your account is pending administrator approval. You may close this window.");
+            setSuccess("რეგისტრაცია წარმატებით დასრულდა! დაელოდე ადმინისტრატორის დადასტურებას. შეგიძლია დახურო ეს ფანჯარა.");
         } catch (err) {
-            setError(err.response?.data?.detail || "Registration failed.");
+            setError(err.response?.data?.detail || "რეგისტრაცია ვერ განხორციელდა.");
         } finally {
             setIsLoading(false);
         }
@@ -377,15 +377,15 @@ const Registration = () => {
 
     return (
         <div className="form-container">
-            <h2>Create Your Account</h2>
+            <h2>შექმენი შენი ანგარიში</h2>
             <form onSubmit={handleSubmit}>
-                <div className="form-group"><label>First Name</label><input type="text" name="first_name" value={formData.first_name} onChange={handleChange} required /></div>
-                <div className="form-group"><label>Last Name</label><input type="text" name="last_name" value={formData.last_name} onChange={handleChange} required /></div>
-                <div className="form-group"><label>Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} required /></div>
-                <div className="form-group"><label>Username</label><input type="text" name="user_name" value={formData.user_name} onChange={handleChange} required /></div>
-                <div className="form-group"><label>Password</label><input type="password" name="password" onChange={handleChange} required /></div>
+                <div className="form-group"><label>სახელი</label><input type="text" name="first_name" value={formData.first_name} onChange={handleChange} required /></div>
+                <div className="form-group"><label>გვარი</label><input type="text" name="last_name" value={formData.last_name} onChange={handleChange} required /></div>
+                <div className="form-group"><label>ელ. ფოსტა</label><input type="email" name="email" value={formData.email} onChange={handleChange} required /></div>
+                <div className="form-group"><label>მომხმარებელი</label><input type="text" name="user_name" value={formData.user_name} onChange={handleChange} required /></div>
+                <div className="form-group"><label>პაროლი</label><input type="password" name="password" onChange={handleChange} required /></div>
                 {error && <p className="error-message message-box">{error}</p>}
-                <button type="submit" className="btn btn-primary" style={{width: '100%'}} disabled={isLoading}>{isLoading ? 'Registering...' : 'Register'}</button>
+                <button type="submit" className="btn btn-primary" style={{width: '100%'}} disabled={isLoading}>{isLoading ? 'რეგისტრაციის მიმდინარეობა...' : 'რეგისტრაცია'}</button>
             </form>
         </div>
     );
@@ -402,7 +402,7 @@ const DeletePatientModal = ({ onClose, onSuccess }) => {
     const handleFindPatient = async (e) => {
         e.preventDefault();
         if (!personalNumber) {
-            setMessage({ type: 'error', text: 'Personal number cannot be empty.' });
+            setMessage({ type: 'error', text: 'მიუთითე პირადი ნომერი.' });
             return;
         }
         setIsLoading(true);
@@ -412,7 +412,7 @@ const DeletePatientModal = ({ onClose, onSuccess }) => {
             setPatientInfo(response.data);
             setStep(2);
         } catch (error) {
-            setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to find patient.' });
+            setMessage({ type: 'error', text: error.response?.data?.detail || 'პაციენტი ვერ იქნა ნაპოვნი.' });
         } finally {
             setIsLoading(false);
         }
@@ -425,7 +425,7 @@ const DeletePatientModal = ({ onClose, onSuccess }) => {
             await apiClient.post('/admin/delete-patient', { personal_number: personalNumber, password });
             onSuccess(); // This will close the modal and refresh the list
         } catch (error) {
-            setMessage({ type: 'error', text: error.response?.data?.detail || 'Deletion failed.' });
+            setMessage({ type: 'error', text: error.response?.data?.detail || 'წაშლა ვერ განხორციელდა.' });
             setStep(2); // Go back to password step on failure
         } finally {
             setIsLoading(false);
@@ -437,14 +437,14 @@ const DeletePatientModal = ({ onClose, onSuccess }) => {
             case 1:
                 return (
                     <form onSubmit={handleFindPatient}>
-                        <p>Enter the personal number of the patient you wish to permanently delete.</p>
+                        <p>შეიყვანე პაციენტი პირადი ნომერი რომლის წაშლაც გსურს სამუდამოდ.</p>
                         <div className="form-group">
-                            <label>Personal Number</label>
+                            <label>პირადი ნომერი</label>
                             <input type="text" value={personalNumber} onChange={e => setPersonalNumber(e.target.value)} required autoFocus/>
                         </div>
                         <div className="modal-footer">
-                            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-                            <button type="submit" className="btn btn-primary" disabled={isLoading}>{isLoading ? 'Finding...' : 'Find Patient'}</button>
+                            <button type="button" className="btn btn-secondary" onClick={onClose}>უკან</button>
+                            <button type="submit" className="btn btn-primary" disabled={isLoading}>{isLoading ? 'მიმდინარეობს პოვნა...' : 'პაციენტის პოვნა'}</button>
                         </div>
                     </form>
                 );
@@ -452,18 +452,18 @@ const DeletePatientModal = ({ onClose, onSuccess }) => {
                 return (
                        <form onSubmit={(e) => { e.preventDefault(); setMessage({type:'',text:''}); setStep(3); }}>
                            <div className="patient-info-box">
-                               <p>You are about to delete:</p>
+                               <p>აპირებ წაშლას:</p>
                                <h3>{patientInfo.first_name} {patientInfo.last_name}</h3>
-                               <p>(Personal N: {patientInfo.personal_number})</p>
+                               <p>(პირადი ნომერი: {patientInfo.personal_number})</p>
                            </div>
-                           <p>Enter your admin password to continue.</p>
+                           <p>გასაგრძელებლად შეიყვანე ადმინისტრატორის პაროლი.</p>
                             <div className="form-group">
-                                 <label>Password</label>
+                                 <label>პაროლი</label>
                                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoFocus/>
                             </div>
                             <div className="modal-footer">
-                                 <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>Back</button>
-                                 <button type="submit" className="btn btn-danger">Continue</button>
+                                 <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>უკან</button>
+                                 <button type="submit" className="btn btn-danger">გაგრძელება</button>
                             </div>
                        </form>
                 );
@@ -471,13 +471,13 @@ const DeletePatientModal = ({ onClose, onSuccess }) => {
                 return (
                     <div>
                         <div className="patient-info-box">
-                            <p className="final-warning">All related data will be deleted also!</p>
-                            <p>This action is irreversible.</p>
+                            <p className="final-warning">პაციენტთან ერთედ წაიშლება ყველა მასთან დაკავშირებული მონაცემი!</p>
+                            <p>მოქმედება შეუქცევადია. მონაცემების აღდგენა შეუძებელია.</p>
                         </div>
                         <div className="modal-footer">
-                             <button type="button" className="btn btn-secondary" onClick={() => setStep(2)}>Back</button>
+                             <button type="button" className="btn btn-secondary" onClick={() => setStep(2)}>უკან</button>
                              <button type="button" className="btn btn-success" style={{flexGrow: 1}} onClick={handleFinalDelete} disabled={isLoading}>
-                                 {isLoading ? 'Deleting...' : 'OK'}
+                                 {isLoading ? 'მიმდინარეობს წაშლა...' : 'დადასტურება'}
                              </button>
                         </div>
                     </div>
@@ -489,7 +489,7 @@ const DeletePatientModal = ({ onClose, onSuccess }) => {
     return (
         <div className="modal-backdrop">
             <div className="modal-content" style={{maxWidth: '500px'}}>
-                <h2>Secure Patient Deletion</h2>
+                <h2>პაციენტის უსაფრთხოდ წაშლა</h2>
                 {message.text && <div className={`message-box ${message.type}-message`}>{message.text}</div>}
                 {renderStep()}
             </div>
@@ -519,8 +519,8 @@ const PatientsView = ({ user }) => {
             const patientsRes = await apiClient.get('/patients/', { params: activeFilters });
             setPatients(patientsRes.data);
         } catch(e) {
-            console.error("Failed to fetch patients:", e);
-            setApiError("Failed to load patients. Please try again later.");
+            console.error("პაციენტების პოვნა ვერ განხორციელდა:", e);
+            setApiError("პაციენტები ვერ ჩამოიტვირთა. ისევ სცადე.");
         }
     }, []);
 
@@ -568,7 +568,7 @@ const PatientsView = ({ user }) => {
             setEditingItem(null);
             handleClearSearch();
         } catch (error) {
-            setApiError(error.response?.data?.detail || `Failed to save patient.`);
+            setApiError(error.response?.data?.detail || `პაციენტი არ შეინახა.`);
         }
     };
     
@@ -579,7 +579,7 @@ const PatientsView = ({ user }) => {
             setAnexPatient(null);
             handleClearSearch();
         } catch (error) {
-            setApiError(error.response?.data?.detail || 'Failed to save Anex details.');
+            setApiError(error.response?.data?.detail || 'დნართის დეტალები ვერ შეინახა.');
         }
     };
     
@@ -612,7 +612,7 @@ const PatientsView = ({ user }) => {
         />}
 
         {editingItem && <FormModal 
-            title={editingItem.id ? "Edit Patient" : "Add Patient"} 
+            title={editingItem.id ? "ჩაასწორე პაციენტი" : "შეინახე პაციენტი"} 
             onClose={() => setEditingItem(null)} 
             onSubmit={e => { e.preventDefault(); handleSave(editingItem); }}
             apiError={apiError}
@@ -632,11 +632,11 @@ const PatientsView = ({ user }) => {
         />}
 
         <div className="page-header">
-            <h2>Manage Patients</h2>
+            <h2>მართე პაციენტები</h2>
             <div className="action-group">
-                <button className="btn btn-primary" onClick={handleAddClick}>Add Patient</button>
+                <button className="btn btn-primary" onClick={handleAddClick}>დაამატე პაციენტი</button>
                 {user.role === 'admin' && (
-                    <button className="btn btn-danger" onClick={() => setIsDeleteModalOpen(true)}>Delete Patient</button>
+                    <button className="btn btn-danger" onClick={() => setIsDeleteModalOpen(true)}>წაშალე პაციენტი</button>
                 )}
             </div>
         </div>
@@ -644,24 +644,24 @@ const PatientsView = ({ user }) => {
         <div className="filter-container">
             <form onSubmit={handleSearch}>
                 <div className="filter-grid">
-                    <div className="filter-item"><label>Personal N</label><input type="text" name="personal_number" value={filters.personal_number} onChange={handleFilterChange} /></div>
-                    <div className="filter-item"><label>Lastname</label><input type="text" name="lastname" value={filters.lastname} onChange={handleFilterChange} /></div>
-                    <div className="filter-item"><label>Firstname</label><input type="text" name="firstname" value={filters.firstname} onChange={handleFilterChange} /></div>
-                    <div className="filter-item"><label>Doctor</label><input type="text" name="doctor" value={filters.doctor} onChange={handleFilterChange} /></div>
-                    <div className="filter-item"><label>Funder</label><input type="text" name="funder" value={filters.funder} onChange={handleFilterChange} placeholder="Enter name or 'self'" /></div>
-                    <div className="filter-item"><label>Research</label><input type="text" name="research" value={filters.research} onChange={handleFilterChange} /></div>
-                    <div className="filter-item"><label>Staff</label><input type="text" name="staff" value={filters.staff} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>პირადი ნომერი</label><input type="text" name="personal_number" value={filters.personal_number} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>გვარი</label><input type="text" name="lastname" value={filters.lastname} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>სახელი</label><input type="text" name="firstname" value={filters.firstname} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>ექიმი</label><input type="text" name="doctor" value={filters.doctor} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>დამფინანსებელი</label><input type="text" name="funder" value={filters.funder} onChange={handleFilterChange} placeholder="Enter name or 'self'" /></div>
+                    <div className="filter-item"><label>კვლევა</label><input type="text" name="research" value={filters.research} onChange={handleFilterChange} /></div>
+                    <div className="filter-item"><label>თანამშრომელი</label><input type="text" name="staff" value={filters.staff} onChange={handleFilterChange} /></div>
                 </div>
                 <div className="filter-actions">
-                    <button type="button" className="btn btn-secondary" onClick={handleClearSearch}>Clear</button>
-                    <button type="submit" className="btn btn-primary">Search</button>
+                    <button type="button" className="btn btn-secondary" onClick={handleClearSearch}>გაწმენდა</button>
+                    <button type="submit" className="btn btn-primary">ძებნა</button>
                 </div>
             </form>
         </div>
 
         {apiError && !editingItem && !anexPatient && <p className="error-message message-box">{apiError}</p>}
         <table>
-            <thead><tr><th>Personal No.</th><th>Name</th><th>Birth Date</th><th>Assigned Staff</th><th>Actions</th></tr></thead>
+            <thead><tr><th>პირადი ნომერი.</th><th>სახელი</th><th>დაბადების თარიღი</th><th>ავტორი</th><th>მოქმედებები</th></tr></thead>
             <tbody>
                 {patients.map(item => <tr key={item.id}>
                     <td>{item.personal_number}</td>
@@ -675,8 +675,8 @@ const PatientsView = ({ user }) => {
                         </div>
                     </td>
                     <td className="actions">
-                        <button className="btn btn-primary btn-sm" onClick={() => handleAnexClick(item)}>Anex</button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
+                        <button className="btn btn-primary btn-sm" onClick={() => handleAnexClick(item)}>დანართი</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>ჩასწორება</button>
                     </td>
                 </tr>)}
             </tbody>
@@ -705,17 +705,17 @@ const UsersView = ({ user }) => {
             setEditingUser(null);
             fetchUsers();
         } catch (error) {
-            setApiError(error.response?.data?.detail || "Failed to save user.");
+            setApiError(error.response?.data?.detail || "მომხმარებელი ვერ შეინახა.");
         }
     };
 
     const handleDelete = async (userId) => {
-        if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+        if (window.confirm("ნამდვილად გინდა ამ მომხმარებლის სამუდამოდ წაშლა? წაშლა შეუქცევადია!")) {
             try {
                 await apiClient.delete(`/admin/users/${userId}`);
                 fetchUsers();
             } catch (error) {
-                alert(error.response?.data?.detail || "Failed to delete user.");
+                alert(error.response?.data?.detail || "მომხმარებელი ვერ წაიშალა.");
             }
         }
     };
@@ -731,13 +731,13 @@ const UsersView = ({ user }) => {
     };
 
     const handleBlock = async (userId, is_blocked) => {
-        const action = is_blocked ? "block" : "unblock";
-        if (window.confirm(`Are you sure you want to ${action} this user?`)) {
+        const action = is_blocked ? "ბლოკის დადება" : "ბლოკის მოხსნა";
+        if (window.confirm(`ნამდვილად გინდა ამ მომხმარებლზე ${action} ?`)) {
             try {
                 await apiClient.post(`/admin/users/${userId}/block`, { is_blocked });
                 fetchUsers();
             } catch(error) {
-                alert(error.response?.data?.detail || `Failed to ${action} user.`);
+                alert(error.response?.data?.detail || `ვერ მოდა მიმდინარე მომხმარებელზე ${action} .`);
             }
         }
     };
@@ -758,17 +758,17 @@ const UsersView = ({ user }) => {
     
     const getStatus = (item) => {
         if (item.is_blocked) {
-            return <span className="status-badge status-blocked">Blocked</span>;
+            return <span className="status-badge status-blocked">დაბლოკილი</span>;
         }
         if (item.is_approved) {
-            return <span className="status-badge status-approved">Approved</span>;
+            return <span className="status-badge status-approved">დადასტურებული</span>;
         }
-        return <span className="status-badge status-pending">Pending</span>;
+        return <span className="status-badge status-pending">დაკიდებული</span>;
     };
 
     return (<div>
         {editingUser && <FormModal 
-            title={editingUser.id ? "Edit User" : "Add User"} 
+            title={editingUser.id ? "მომხმარებლის ჩასწორება" : "მომხმარებლის დამატება"} 
             onClose={() => setEditingUser(null)} 
             onSubmit={(e) => { e.preventDefault(); handleSave(editingUser); }}
             apiError={apiError}
@@ -779,13 +779,13 @@ const UsersView = ({ user }) => {
         {isInvitationModalOpen && <InvitationModal onClose={() => setIsInvitationModalOpen(false)} />}
         
         <div className="page-header">
-            <h2>Manage Users</h2>
+            <h2>მომხმარებლის მართვა</h2>
             <div className="action-group">
-                <button className="btn btn-secondary" onClick={() => setIsInvitationModalOpen(true)}>Generate Invitation</button>
-                <button className="btn btn-primary" onClick={handleAddClick}>Add User Manually</button>
+                <button className="btn btn-secondary" onClick={() => setIsInvitationModalOpen(true)}>მოწვევის შექმნა</button>
+                <button className="btn btn-primary" onClick={handleAddClick}>მომხმარებლის დამატება ხელით</button>
             </div>
         </div>
-        <table><thead><tr><th>Name</th><th>Email</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        <table><thead><tr><th>სახელი</th><th>ელ. ფოსტა</th><th>მომხმარებელი</th><th>თანამდებობა</th><th>სტატუსი</th><th>მოქმედებები</th></tr></thead><tbody>
             {users.map(item => (<tr key={item.id}>
                 <td>{item.first_name} {item.last_name}</td><td>{item.email}</td><td>{item.user_name}</td>
                 <td>{item.role}</td>
@@ -798,20 +798,20 @@ const UsersView = ({ user }) => {
                                 onChange={(e) => setApprovalRoles(prev => ({...prev, [item.id]: e.target.value}))}
                                 style={{width: '100px', marginRight: '0.5rem'}}
                             >
-                                <option value="staff">Staff</option>
-                                <option value="doctor">Doctor</option>
+                                <option value="staff">თანამშრომელი</option>
+                                <option value="doctor">ექიმი</option>
                             </select>
-                            <button className="btn btn-success btn-sm" onClick={() => handleApprove(item.id)}>Approve</button>
+                            <button className="btn btn-success btn-sm" onClick={() => handleApprove(item.id)}>დადასტურება</button>
                         </>
                     ) : (
                         <>
-                            <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>ჩასწორება</button>
                             {item.is_blocked ? (
-                                <button className="btn btn-success btn-sm" onClick={() => handleBlock(item.id, false)}>Unblock</button>
+                                <button className="btn btn-success btn-sm" onClick={() => handleBlock(item.id, false)}>ბლოკის მოხსნა</button>
                             ) : (
-                                <button className="btn btn-warning btn-sm" onClick={() => handleBlock(item.id, true)}>Block</button>
+                                <button className="btn btn-warning btn-sm" onClick={() => handleBlock(item.id, true)}>ბლოკის დადება</button>
                             )}
-                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>
+                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>წაშლა</button>
                         </>
                     )}
                 </td>
@@ -825,7 +825,7 @@ const FinanceView = ({ user }) => {
     const [editingItem, setEditingItem] = useState(null);
     const [apiError, setApiError] = useState('');
 
-    const fetchItems = useCallback(async () => { try { setFinances((await apiClient.get('/finances/')).data); } catch(e) { console.error("Failed to fetch finances:", e) } }, []);
+    const fetchItems = useCallback(async () => { try { setFinances((await apiClient.get('/finances/')).data); } catch(e) { console.error("ვერ მოხდა ფინანსების წამოღება:", e) } }, []);
     useEffect(() => { fetchItems(); }, [fetchItems]);
 
     const handleSave = async (formData) => {
@@ -836,17 +836,17 @@ const FinanceView = ({ user }) => {
             setEditingItem(null);
             fetchItems();
         } catch (error) {
-            setApiError(error.response?.data?.detail || "Failed to save finance record.");
+            setApiError(error.response?.data?.detail || "ვერ მოხდა ფინანსური ჩანაწერის მონაცემების შენახვა.");
         }
     };
     
     const handleDelete = async (id) => { 
-        if (window.confirm("Delete this finance record?")) { 
+        if (window.confirm("წაიშალოს მოცემული ფინანსური ჩანაწერი?")) { 
             try {
                 await apiClient.delete(`/finances/${id}`); 
                 fetchItems(); 
             } catch(error) {
-                alert(error.response?.data?.detail || "Failed to delete record.");
+                alert(error.response?.data?.detail || "ვერ განხორციელდა ჩანაწერის წაშლა.");
             }
         } 
     };
@@ -867,18 +867,18 @@ const FinanceView = ({ user }) => {
 
     return (<div>
         {editingItem && <FormModal 
-            title={editingItem.id ? "Edit Finance Record" : "Add Finance Record"} 
+            title={editingItem.id ? "ფინანსური ჩანაწერის ჩასწორება" : "ფინანსური ჩანაწერის დამატება"} 
             onClose={() => setEditingItem(null)} 
             onSubmit={e => { e.preventDefault(); handleSave(editingItem); }}
             apiError={apiError}
         >
             <FinanceFormFields formData={editingItem} handleChange={handleFormChange} />
         </FormModal>}
-        <div className="page-header"><h2>Manage Finance</h2><button className="btn btn-primary" onClick={handleAddClick}>Add Record</button></div>
-        <table><thead><tr><th>Funder</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead><tbody>
+        <div className="page-header"><h2>ფინანსების მართვა</h2><button className="btn btn-primary" onClick={handleAddClick}>ჩანაწერის დამატება</button></div>
+        <table><thead><tr><th>დამფინანსებელი</th><th>ელ. ფოსტა</th><th>ტელეფონი</th><th>მოქმედებები</th></tr></thead><tbody>
             {finances.map(item => <tr key={item.id}><td>{item.funder_name}</td><td>{item.email}</td><td>{item.phone_number}</td><td className="actions">
-                <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
-                {user.role === 'admin' && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>}
+                <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>ჩასწორება</button>
+                {user.role === 'admin' && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>წაშლა</button>}
             </td></tr>)}
         </tbody></table>
     </div>);
@@ -900,16 +900,16 @@ const ServicesView = ({ user }) => {
             setEditingItem(null);
             fetchItems();
         } catch (error) {
-            setApiError(error.response?.data?.detail || "Failed to save service record.");
+            setApiError(error.response?.data?.detail || "ვერ შეინახა მომსახურების ჩანაწერი.");
         }
     };
     const handleDelete = async (id) => { 
-        if (window.confirm("Delete this service record?")) { 
+        if (window.confirm("წაიშალოს მოცემული ჩანაწერი?")) { 
             try {
                 await apiClient.delete(`/services/${id}`); 
                 fetchItems();
             } catch (error) {
-                alert(error.response?.data?.detail || "Failed to delete record.");
+                alert(error.response?.data?.detail || "ვერ წაიშალა ჩანაწერი.");
             }
         } 
     };
@@ -930,18 +930,18 @@ const ServicesView = ({ user }) => {
 
     return (<div>
         {editingItem && <FormModal 
-            title={editingItem.id ? "Edit Service Record" : "Add Service Record"} 
+            title={editingItem.id ? "მომსახურების ჩანაწერის ჩასწორება" : "მომსახურების ჩანაწერის დამატება"} 
             onClose={() => setEditingItem(null)} 
             onSubmit={e => { e.preventDefault(); handleSave(editingItem); }}
             apiError={apiError}
             >
             <ServiceFormFields formData={editingItem} handleChange={handleFormChange} />
         </FormModal>}
-        <div className="page-header"><h2>Manage Services</h2><button className="btn btn-primary" onClick={handleAddClick}>Add Record</button></div>
-        <table><thead><tr><th>Service No.</th><th>Research Name</th><th>Lab Name</th><th>Deadline</th><th>Actions</th></tr></thead><tbody>
+        <div className="page-header"><h2>მომსახურებების მართვა</h2><button className="btn btn-primary" onClick={handleAddClick}>ჩანაწერის დამატება</button></div>
+        <table><thead><tr><th>მომსახურების ნომერი</th><th>კვლევა</th><th>ლაბორატორია</th><th>ვადა</th><th>მოქმედებები</th></tr></thead><tbody>
             {services.map(item => <tr key={item.id}><td>{item.service_number}</td><td>{item.research_name}</td><td>{item.laboratory_name}</td><td>{item.deadline}</td><td className="actions">
-                <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
-                {user.role === 'admin' && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>}
+                <button className="btn btn-secondary btn-sm" onClick={() => handleEditClick(item)}>ჩასწორება</button>
+                {user.role === 'admin' && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>წაშლა</button>}
             </td></tr>)}
         </tbody></table>
     </div>);
@@ -998,8 +998,8 @@ const HistoryView = ({ user }) => {
             const response = await apiClient.get('/history/', { params: activeFilters });
             setLogs(response.data);
         } catch (e) {
-            console.error("Failed to fetch history logs:", e);
-            setApiError("Failed to load history logs. Please try again later.");
+            console.error("ვერ მოხდა ცვლილებების ისტორიის წამოღება:", e);
+            setApiError("ვერ მოხდა ცვლილებების ისტორიის ჩამოტვირთვა. ისევ სცადე.");
         }
     }, []);
 
@@ -1024,17 +1024,17 @@ const HistoryView = ({ user }) => {
 
     return (
         <div>
-            <div className="page-header"><h2>History of Changes</h2></div>
+            <div className="page-header"><h2>ცვლილებების ისტორია</h2></div>
             <div className="filter-container">
                 <form onSubmit={handleSearch}>
                     <div className="filter-grid">
-                        <div className="filter-item"><label>Author (username)</label><input type="text" name="author" value={filters.author} onChange={handleFilterChange} /></div>
-                        <div className="filter-item"><label>Date</label><input type="date" name="date" value={filters.date} onChange={handleFilterChange} /></div>
-                        <div className="filter-item"><label>Patient (name or personal number)</label><input type="text" name="patient" value={filters.patient} onChange={handleFilterChange} /></div>
+                        <div className="filter-item"><label>ავტორი (მომხმარებელი)</label><input type="text" name="author" value={filters.author} onChange={handleFilterChange} /></div>
+                        <div className="filter-item"><label>თარიღი</label><input type="date" name="date" value={filters.date} onChange={handleFilterChange} /></div>
+                        <div className="filter-item"><label>პაციენტი (სახელი ან პირადი ნომერი)</label><input type="text" name="patient" value={filters.patient} onChange={handleFilterChange} /></div>
                     </div>
                     <div className="filter-actions">
-                        <button type="button" className="btn btn-secondary" onClick={handleClearSearch}>Clear</button>
-                        <button type="submit" className="btn btn-primary">Search</button>
+                        <button type="button" className="btn btn-secondary" onClick={handleClearSearch}>გაწმენდა</button>
+                        <button type="submit" className="btn btn-primary">ძებნა</button>
                     </div>
                 </form>
             </div>
@@ -1043,18 +1043,18 @@ const HistoryView = ({ user }) => {
                 <thead>
                     <tr>
                         <th style={{width: '180px'}}>Date</th>
-                        <th>Author</th>
-                        <th>Action</th>
-                        <th>Entity</th>
-                        <th>Patient Context</th>
-                        <th>Details</th>
+                        <th>ავტორი</th>
+                        <th>მოქმედება</th>
+                        <th>ერთეული</th>
+                        <th>პაციენტის კონტექსტი</th>
+                        <th>დეტალები</th>
                     </tr>
                 </thead>
                 <tbody>
                     {logs.map(log => (
                         <tr key={log.id}>
                             <td>{new Date(log.timestamp).toLocaleString()}</td>
-                            <td>{log.user ? log.user.user_name : <span style={{color: '#888'}}>Deleted User</span>}</td>
+                            <td>{log.user ? log.user.user_name : <span style={{color: '#888'}}>წაშლილი მომხმარებელი</span>}</td>
                             <td>{log.action}</td>
                             <td>{log.entity_type} #{log.entity_id}</td>
                             <td>
@@ -1080,13 +1080,13 @@ const Dashboard = ({ user, handleLogout }) => {
     
     return ( 
         <div className="container">
-            <div className="page-header"><h1>Management Panel</h1><button className="btn btn-secondary" onClick={handleLogout}>Logout</button></div>
+            <div className="page-header"><h1>მართვის პანელი</h1><button className="btn btn-secondary" onClick={handleLogout}>გამოსვლა</button></div>
             <nav className="nav-tabs">
-                <NavTab view="patients" label="Patients" />
-                {user.role === 'admin' && <NavTab view="users" label="Users" />}
-                <NavTab view="finance" label="Finance" />
-                <NavTab view="services" label="Services" />
-                <NavTab view="history" label="History of Changes" />
+                <NavTab view="patients" label="პაციენტები" />
+                {user.role === 'admin' && <NavTab view="users" label="მომხმარებლები" />}
+                <NavTab view="finance" label="ფინანსები" />
+                <NavTab view="services" label="მომსახურებები" />
+                <NavTab view="history" label="ცვლილებების ისტორია" />
             </nav>
             {activeView === 'patients' && <PatientsView user={user} />}
             {activeView === 'users' && user.role === 'admin' && <UsersView user={user} />}
@@ -1112,7 +1112,7 @@ function App() {
                 localStorage.removeItem('accessToken');
             }
         } catch (error) {
-            console.error("Invalid token");
+            console.error("ტოკენი არ არის ვალიდური");
             localStorage.removeItem('accessToken');
         }
     }
@@ -1124,7 +1124,7 @@ function App() {
         const decoded = jwtDecode(token);
         setUser({ role: decoded.role, username: decoded.sub });
     } catch (error) {
-        console.error("Failed to decode token on login", error);
+        console.error("ვერ გაიშიფრა აუთენთიფიკაციის ტოკენი", error);
     }
   };
   
