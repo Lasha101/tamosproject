@@ -52,7 +52,7 @@ jobs:
             # Determine the application directory based on the user
             USERNAME="$(whoami)"
             if [ "$USERNAME" = "root" ]; then
-              APP_DIR="/root/applab"
+              APP_DIR="root/applab"
             else
               # Prefer /opt/applab for system-wide access
               APP_DIR="/opt/applab"
