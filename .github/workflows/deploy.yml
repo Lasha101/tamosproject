@@ -1,7 +1,7 @@
 # .github/workflows/deploy.yml
 name: CI/CD Pipeline for Lab App # Trigger a new run
 # corrected script
-# Run this workflow on pushes to the main branch
+
 on:
   push:
     branches: [ "main" ]
