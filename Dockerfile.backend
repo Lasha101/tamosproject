@@ -1,18 +1,21 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11-slim
 
-# Set the working directory in the container
-WORKDIR /app
+# Set a root working directory for the whole app
+WORKDIR /project
 
-# Copy the requirements file into the container
-COPY ./backend/requirements.txt /app/
+# Copy the entire build context (your whole project) into the container
+COPY . .
 
-# Install any needed packages specified in requirements.txt
+# Now, set the working directory specifically to the backend code
+WORKDIR /project/backend
+
+# Install dependencies from within the backend directory
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the backend source code into the container
-COPY ./backend/ /app/
+# The command to run the application.
+# Since the WORKDIR is now /project/backend, we can directly call main:app
+# We'll list files here to confirm they exist before starting.
+CMD ["/bin/sh", "-c", "ls -l && uvicorn main:app --host 0.0.0.0 --port 8000"]
 
-# The command to run the application
-# This correctly points to the 'app' instance inside the 'main.py' file.
-CMD ["/bin/sh", "-c", "ls -R && uvicorn main:app --host 0.0.0.0 --port 8000"]
+
