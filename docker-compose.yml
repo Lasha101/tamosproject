@@ -1,0 +1,37 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: lab_app_backend
+    restart: always
+    environment:
+      # These will be loaded from a .env file on the server
+      - SECRET_KEY=${SECRET_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    volumes:
+      # This line is CRUCIAL for persisting your SQLite database
+      - ./data:/app
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # This passes the backend URL to the React build process
+        REACT_APP_API_URL: http://209.38.238.165:8000
+    container_name: lab_app_frontend
+    restart: always
+    ports:
+      # Map port 80 of the container to port 80 on the Droplet
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  data:

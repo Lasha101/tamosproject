@@ -1,0 +1,54 @@
+# .github/workflows/deploy.yml
+name: CI/CD Pipeline for Lab App
+
+# Run this workflow on pushes to the main branch
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to DigitalOcean Container Registry
+        run: doctl registry login --expiry-seconds 600
+
+      - name: Build and Push Backend Image
+        run: |
+          docker build -f Dockerfile.backend -t registry.digitalocean.com/registry.digitalocean.com/fortamosapp/lab-app-backend:${{ github.sha }} .
+          docker push registry.digitalocean.com/registry.digitalocean.com/fortamosapp/lab-app-backend:${{ github.sha }}
+
+      - name: Build and Push Frontend Image
+        run: |
+          docker build -f frontend/Dockerfile --build-arg REACT_APP_API_URL=http://${{ secrets.SSH_HOST }}:8000 -t registry.digitalocean.com/your-registry-name/lab-app-frontend:${{ github.sha }} ./frontend
+          docker push registry.digitalocean.com/registry.digitalocean.com/fortamosapp/lab-app-frontend:${{ github.sha }}
+          
+      - name: Deploy to Droplet
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/your-project-folder
+            
+            # Create a dynamic docker-compose file for this deployment
+            # This replaces placeholders with the unique image tags
+            export BACKEND_IMAGE_TAG=${{ github.sha }}
+            export FRONTEND_IMAGE_TAG=${{ github.sha }}
+            envsubst < docker-compose.template.yml > docker-compose.yml
+            
+            # Pull the new images from the registry
+            docker-compose pull
+            
+            # Stop the current containers and start the new ones
+            docker-compose up -d --remove-orphans
