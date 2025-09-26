@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     container_name: lab_app_backend
-    restart: always
+    # restart: always
     environment:
       # These will be loaded from a .env file on the server
       - SECRET_KEY=${SECRET_KEY}
