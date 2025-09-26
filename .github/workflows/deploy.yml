@@ -33,7 +33,7 @@ jobs:
       - name: Deploy to Droplet
         uses: appleboy/ssh-action@master
         env:
-          # Pass secrets and variables as environment variables to the script
+          # Define variables to be used in the runner environment
           DOCR_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           BACKEND_IMAGE_TAG: ${{ github.sha }}
           FRONTEND_IMAGE_TAG: ${{ github.sha }}
@@ -41,7 +41,8 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
+          # Pass the variables to the remote SSH script
+          envs: DOCR_TOKEN,BACKEND_IMAGE_TAG,FRONTEND_IMAGE_TAG
           script: |
             # Exit script on any error
             set -euo pipefail
@@ -72,9 +73,10 @@ jobs:
             echo "$DOCR_TOKEN" | docker login -u doctl --password-stdin registry.digitalocean.com
 
             # Render the compose file with the new image tags
-            # The environment variables are passed from the 'env' block above
+            # The environment variables are passed from the 'envs' input above
             envsubst < docker-compose.template.yml > docker-compose.yml
 
             # Pull the latest images and restart the services
             docker compose pull
             docker compose up -d --remove-orphans
+
