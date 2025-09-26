@@ -39,7 +39,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /root/applab 
+            cd root/applab 
             
             # Create a dynamic docker-compose file for this deployment
             # This replaces placeholders with the unique image tags
