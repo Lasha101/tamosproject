@@ -1,4 +1,3 @@
-# Dockerfile.backend
 # Use an official Python runtime as a parent image
 FROM python:3.11-slim
 
@@ -15,5 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./backend/ /app/
 
 # The command to run the application
-# We use 0.0.0.0 to make it accessible outside the container
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# We use app.main:app to correctly point to the main.py file inside the app/ subdirectory
+# We also add --reload for development, which you might remove for production
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
