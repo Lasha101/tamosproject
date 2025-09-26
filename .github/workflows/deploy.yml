@@ -24,13 +24,13 @@ jobs:
 
       - name: Build and Push Backend Image
         run: |
-          docker build -f Dockerfile.backend -t registry.digitalocean.com/registry.digitalocean.com/fortamosapp/lab-app-backend:${{ github.sha }} .
-          docker push registry.digitalocean.com/registry.digitalocean.com/fortamosapp/lab-app-backend:${{ github.sha }}
+          docker build -f Dockerfile.backend -t registry.digitalocean.com/fortamosapp/lab-app-backend:${{ github.sha }} .
+          docker push registry.digitalocean.com/fortamosapp/lab-app-backend:${{ github.sha }}
 
       - name: Build and Push Frontend Image
         run: |
-          docker build -f frontend/Dockerfile --build-arg REACT_APP_API_URL=http://${{ secrets.SSH_HOST }}:8000 -t registry.digitalocean.com/your-registry-name/lab-app-frontend:${{ github.sha }} ./frontend
-          docker push registry.digitalocean.com/registry.digitalocean.com/fortamosapp/lab-app-frontend:${{ github.sha }}
+          docker build -f frontend/Dockerfile --build-arg REACT_APP_API_URL=http://${{ secrets.SSH_HOST }}:8000 -t registry.digitalocean.com/fortamosapp/lab-app-frontend:${{ github.sha }} ./frontend
+          docker push registry.digitalocean.com/fortamosapp/lab-app-frontend:${{ github.sha }}
           
       - name: Deploy to Droplet
         uses: appleboy/ssh-action@master
