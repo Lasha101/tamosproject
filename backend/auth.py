@@ -11,7 +11,7 @@ from database import get_db
 
 # --- Configuration ---
 # Load from environment variables for security
-SECRET_KEY = "tamostratoradmin"
+SECRET_KEY = os.getenv("SECRET_KEY", "a_default_secret_key_for_development")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
