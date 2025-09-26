@@ -1,5 +1,5 @@
 # .github/workflows/deploy.yml
-name: CI/CD Pipeline for Lab App # Trigger a new run
+name: CI/CD Pipeline for Lab App
 # corrected script
 
 on:
