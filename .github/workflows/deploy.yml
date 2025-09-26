@@ -1,6 +1,4 @@
-# .github/workflows/deploy.yml
 name: CI/CD Pipeline for Lab App
-# corrected script
 
 on:
   push:
@@ -32,25 +30,30 @@ jobs:
           docker build -f frontend/Dockerfile --build-arg REACT_APP_API_URL=http://${{ secrets.SSH_HOST }}:8000 -t registry.digitalocean.com/fortamosapp/lab-app-frontend:${{ github.sha }} ./frontend
           docker push registry.digitalocean.com/fortamosapp/lab-app-frontend:${{ github.sha }}
           
-       - name: Deploy to Droplet
+      - name: Deploy to Droplet
         uses: appleboy/ssh-action@master
+        env:
+          # Pass secrets and variables as environment variables to the script
+          DOCR_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          BACKEND_IMAGE_TAG: ${{ github.sha }}
+          FRONTEND_IMAGE_TAG: ${{ github.sha }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
-          envs: DOCR_TOKEN
-          env:
-            DOCR_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           script: |
+            # Exit script on any error
             set -euo pipefail
+            # Print each command before executing
             set -x
 
+            # Determine the application directory based on the user
             USERNAME="$(whoami)"
             if [ "$USERNAME" = "root" ]; then
               APP_DIR="/root/applab"
             else
-              # prefer /opt/applab (system-wide) or your home dir
+              # Prefer /opt/applab for system-wide access
               APP_DIR="/opt/applab"
               sudo mkdir -p "$APP_DIR"
               sudo chown -R "$USERNAME":"$USERNAME" "$APP_DIR"
@@ -59,20 +62,19 @@ jobs:
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
-            # Ensure envsubst exists
+            # Ensure envsubst command is available for variable substitution
             if ! command -v envsubst >/dev/null 2>&1; then
               sudo apt-get update -y
               sudo apt-get install -y gettext-base
             fi
 
-            # Docker registry login (pull access)
+            # Log in to DigitalOcean Container Registry to pull images
             echo "$DOCR_TOKEN" | docker login -u doctl --password-stdin registry.digitalocean.com
 
-            # Render compose file with current SHA tags
-            export BACKEND_IMAGE_TAG=${{ github.sha }}
-            export FRONTEND_IMAGE_TAG=${{ github.sha }}
+            # Render the compose file with the new image tags
+            # The environment variables are passed from the 'env' block above
             envsubst < docker-compose.template.yml > docker-compose.yml
 
-            # Pull and restart
+            # Pull the latest images and restart the services
             docker compose pull
             docker compose up -d --remove-orphans
