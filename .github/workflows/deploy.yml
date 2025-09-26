@@ -41,6 +41,7 @@ jobs:
           script: |
             cd root/applab 
             
+            doctl registry login --expiry-seconds 600
             # Create a dynamic docker-compose file for this deployment
             # This replaces placeholders with the unique image tags
             export BACKEND_IMAGE_TAG=${{ github.sha }}
